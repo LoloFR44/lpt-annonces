@@ -1,0 +1,108 @@
+'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { CATEGORIES, Category } from '@/lib/types'
+import DepositStepper from '@/components/deposit/DepositStepper'
+
+const CAT_DESCRIPTIONS: Record<Category, string> = {
+  cession:     'Vente de startup, SaaS, fonds de commerce, parts sociales ou actifs numériques',
+  recrutement: 'CDI, CDD, alternance, recherche d\'associé ou co-fondateur pour votre projet',
+  partenariat: 'Distribution, intégration, accord commercial, co-marketing ou alliance stratégique',
+  freelance:   'Mission ponctuelle ou longue durée : dev, design, marketing, conseil, juridique…',
+  materiel:    'Vente ou don de matériel informatique, mobilier de bureau, équipements techniques',
+  locaux:      'Sous-location, cession de bail, recherche de bureau, coworking partagé',
+}
+
+const CAT_COUNTS: Record<Category, number> = {
+  cession: 48, recrutement: 97, partenariat: 64, freelance: 82, materiel: 29, locaux: 22,
+}
+
+export default function DeposeStep1() {
+  const [selected, setSelected] = useState<Category | null>(null)
+  const router = useRouter()
+
+  return (
+    <>
+      {/* Page header */}
+      <div className="bg-hero-gradient text-white px-8 py-9 text-center">
+        <h1 className="text-2xl font-extrabold mb-2">📝 Déposer une annonce</h1>
+        <p className="text-sm text-white/60">Rejoignez 1 200+ entrepreneurs actifs sur Les Pépites Tech</p>
+      </div>
+
+      <DepositStepper currentStep={1} />
+
+      <div className="max-w-[900px] mx-auto px-6 py-10">
+        <h2 className="text-lg font-extrabold text-navy text-center mb-2">
+          Quelle est la nature de votre annonce ?
+        </h2>
+        <p className="text-sm text-muted text-center mb-9">
+          Choisissez la catégorie la plus adaptée pour toucher les bons profils
+        </p>
+
+        {/* Info band */}
+        <div className="bg-white border border-border rounded-xl p-4 flex gap-4 items-start mb-9">
+          <span className="text-2xl flex-shrink-0">💡</span>
+          <p className="text-sm text-navy/70 leading-relaxed">
+            Vos annonces sont diffusées auprès de{' '}
+            <strong className="text-navy">+12 000 entrepreneurs</strong> de l'écosystème French Tech.
+            La bonne catégorie vous permet d'atteindre les profils les plus pertinents.
+          </p>
+        </div>
+
+        {/* Category grid */}
+        <div className="grid grid-cols-3 gap-4 mb-9">
+          {(Object.entries(CATEGORIES) as [Category, typeof CATEGORIES[Category]][]).map(([key, cat]) => {
+            const isSelected = selected === key
+            return (
+              <button
+                key={key}
+                onClick={() => setSelected(key)}
+                className={`relative bg-white rounded-2xl border-2 p-7 text-center transition-all duration-200
+                           hover:-translate-y-0.5 hover:shadow-lg focus:outline-none
+                           ${isSelected ? 'shadow-lg -translate-y-0.5' : 'border-border hover:border-teal'}`}
+                style={isSelected ? { borderColor: cat.color, background: cat.bg } : {}}
+              >
+                {/* Check */}
+                {isSelected && (
+                  <span className="absolute top-3 left-3 w-5 h-5 rounded-full flex items-center justify-center text-white text-[11px] font-bold"
+                        style={{ background: cat.color }}>
+                    ✓
+                  </span>
+                )}
+                {/* Count */}
+                <span className="absolute top-3 right-3 text-[10px] font-bold text-muted bg-surface px-2 py-0.5 rounded-full">
+                  {CAT_COUNTS[key]}
+                </span>
+
+                <div className="text-4xl mb-3">{cat.emoji}</div>
+                <div className="text-sm font-extrabold text-navy mb-1.5"
+                     style={isSelected ? { color: cat.color } : {}}>
+                  {cat.label}
+                </div>
+                <div className="text-[11px] text-muted leading-snug">{CAT_DESCRIPTIONS[key]}</div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* CTA */}
+        <div className="flex justify-center gap-3">
+          <button
+            onClick={() => router.push('/')}
+            className="text-sm font-semibold text-muted underline hover:text-navy transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            disabled={!selected}
+            onClick={() => selected && router.push('/deposer/details')}
+            className={`text-sm font-bold text-white px-9 py-3.5 rounded-xl transition-all
+              ${selected ? 'bg-teal hover:bg-teal-dark' : 'bg-border text-muted cursor-not-allowed'}`}
+          >
+            Continuer → Détails de l'annonce
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}

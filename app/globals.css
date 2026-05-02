@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Montserrat', sans-serif;
+  }
+  body {
+    @apply bg-surface text-navy;
+  }
+}
+
+@layer components {
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .btn-primary {
+    @apply bg-teal text-white font-bold text-sm px-5 py-2.5 rounded-lg
+           hover:bg-teal-dark transition-colors duration-150 inline-flex items-center gap-2;
+  }
+  .btn-secondary {
+    @apply bg-surface text-navy font-semibold text-sm px-5 py-2.5 rounded-lg
+           hover:bg-border transition-colors duration-150 inline-flex items-center gap-2;
+  }
+  .btn-outline {
+    @apply border-2 border-teal text-teal font-bold text-sm px-5 py-2.5 rounded-lg
+           hover:bg-teal-light transition-colors duration-150 inline-flex items-center gap-2;
+  }
+  .btn-pill {
+    @apply bg-teal text-white font-bold text-xs px-4 py-1.5 rounded-full
+           hover:bg-teal-dark transition-colors duration-150;
+  }
+
+  /* ── Cards ───────────────────────────────────────────────── */
+  .card {
+    @apply bg-white rounded-xl border border-border p-5;
+  }
+  .card-hover {
+    @apply card hover:border-teal hover:shadow-lg hover:-translate-y-0.5
+           transition-all duration-200 cursor-pointer;
+  }
+
+  /* ── Badges ──────────────────────────────────────────────── */
+  .badge {
+    @apply text-xs font-bold px-2.5 py-0.5 rounded-full;
+  }
+  .badge-teal  { @apply badge bg-teal-light text-teal; }
+  .badge-gold  { @apply badge bg-gold-light text-gold; }
+  .badge-green { @apply badge bg-green-50 text-green-600; }
+  .badge-red   { @apply badge bg-red-50 text-red-500; }
+
+  /* ── Category badges ─────────────────────────────────────── */
+  .cat-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0;
+  }
+  .cat-cession     { @apply cat-icon bg-orange-50; }
+  .cat-recrutement { @apply cat-icon bg-green-50; }
+  .cat-partenariat { @apply cat-icon; background-color:#F5E8EE; }
+  .cat-freelance   { @apply cat-icon bg-blue-50; }
+  .cat-materiel    { @apply cat-icon bg-purple-50; }
+  .cat-locaux      { @apply cat-icon; background-color:#E8F6F4; }
+
+  /* ── Form inputs ─────────────────────────────────────────── */
+  .input {
+    @apply w-full px-3.5 py-2.5 border border-border rounded-lg text-sm
+           text-navy font-medium focus:outline-none focus:border-teal transition-colors;
+  }
+  .label {
+    @apply block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1.5;
+  }
+
+  /* ── Section label ───────────────────────────────────────── */
+  .section-label {
+    @apply text-xs font-bold uppercase tracking-wider text-muted mb-3;
+  }
+}
+
+/* ── Scrollbar thin ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E8ECF0; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #2BBFBF; }

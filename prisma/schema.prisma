@@ -1,0 +1,259 @@
+// LPT Annonces — Prisma schema
+// Postgres (Neon) — see .env.local for DATABASE_URL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────
+
+enum Category {
+  CESSION
+  RECRUTEMENT
+  PARTENARIAT
+  FREELANCE
+  MATERIEL
+  LOCAUX
+}
+
+enum AnnoncePlan {
+  FREE
+  PREMIUM
+}
+
+enum AnnonceStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  ARCHIVED
+}
+
+enum MediaType {
+  IMAGE
+  PDF
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum AlertFrequency {
+  INSTANT
+  DAILY
+  WEEKLY
+}
+
+enum UserProfile {
+  FOUNDER
+  REPRENEUR
+  FREELANCE
+  INVESTOR
+  PARTNER
+  OTHER
+}
+
+// ─── NextAuth core ────────────────────────────────────────────────────
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  passwordHash  String?
+  profile       UserProfile?
+  role          String?       // free-text headline ("Fondateur & CEO")
+  verified      Boolean      @default(false) // badge "profil vérifié LPT"
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  annonces         Annonce[]
+  sentMessages     Message[]      @relation("MessagesSent")
+  receivedMessages Message[]      @relation("MessagesReceived")
+  transactions    Transaction[]
+  savedAnnonces   SavedAnnonce[]
+  alerts          Alert[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Annonces ─────────────────────────────────────────────────────────
+
+model Annonce {
+  id          String        @id @default(cuid())
+  // Slug-style public reference shown to users (e.g. LPT-2026-04789).
+  reference   String        @unique
+  title       String
+  description String        @db.Text
+  category    Category
+  sector      String?
+  location    String?
+  // Numeric amount in EUR (when applicable) — used for sort/filter.
+  priceAmount Decimal?      @db.Decimal(12, 2)
+  // Display label when no number applies ("Equity", "À définir", "650 €/j").
+  priceLabel  String?
+  priceNote   String?
+  plan        AnnoncePlan   @default(FREE)
+  status      AnnonceStatus @default(ACTIVE)
+  views       Int           @default(0)
+  expiresAt   DateTime
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  tags         AnnonceTag[]
+  media        AnnonceMedia[]
+  kpis         AnnonceKpi[]
+  messages     Message[]
+  transactions Transaction[]
+  saved        SavedAnnonce[]
+
+  @@index([status, createdAt])
+  @@index([category, status])
+  @@index([authorId])
+}
+
+model AnnonceTag {
+  id        String  @id @default(cuid())
+  annonceId String
+  value     String
+  annonce   Annonce @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+
+  @@unique([annonceId, value])
+  @@index([value])
+}
+
+model AnnonceMedia {
+  id        String    @id @default(cuid())
+  annonceId String
+  url       String
+  type      MediaType
+  order     Int       @default(0)
+  annonce   Annonce   @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+
+  @@index([annonceId, order])
+}
+
+// KPI block on the detail page (ARR, clients, équipe, rétention, …).
+model AnnonceKpi {
+  id        String  @id @default(cuid())
+  annonceId String
+  value     String
+  label     String
+  order     Int     @default(0)
+  annonce   Annonce @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+
+  @@index([annonceId, order])
+}
+
+// ─── Messagerie ──────────────────────────────────────────────────────
+
+model Message {
+  id         String    @id @default(cuid())
+  senderId   String
+  receiverId String
+  annonceId  String
+  body       String    @db.Text
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  sender   User    @relation("MessagesSent",     fields: [senderId],   references: [id], onDelete: Cascade)
+  receiver User    @relation("MessagesReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+  annonce  Annonce @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+
+  @@index([receiverId, readAt])
+  @@index([senderId, receiverId, annonceId, createdAt])
+}
+
+// ─── Paiements ───────────────────────────────────────────────────────
+
+model Transaction {
+  id              String            @id @default(cuid())
+  userId          String
+  annonceId       String?
+  amount          Decimal           @db.Decimal(10, 2) // EUR
+  currency        String            @default("EUR")
+  stripeSessionId String?           @unique
+  stripePaymentId String?           @unique
+  status          TransactionStatus @default(PENDING)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  annonce Annonce? @relation(fields: [annonceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+}
+
+// ─── Sauvegardes & alertes ───────────────────────────────────────────
+
+model SavedAnnonce {
+  id        String   @id @default(cuid())
+  userId    String
+  annonceId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  annonce Annonce @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, annonceId])
+}
+
+model Alert {
+  id        String         @id @default(cuid())
+  userId    String
+  category  Category?
+  keywords  String?
+  location  String?
+  frequency AlertFrequency @default(WEEKLY)
+  createdAt DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
