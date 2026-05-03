@@ -1,12 +1,26 @@
 import Link from 'next/link'
-import { ANNONCES } from '@/data/mock'
 import { CATEGORIES, Category } from '@/lib/types'
+import { listAnnonces, countActiveAnnonces, countByCategory } from '@/lib/queries'
 
-const CATEGORY_COUNTS: Record<Category, number> = {
-  cession: 48, recrutement: 97, partenariat: 64, freelance: 82, materiel: 29, locaux: 22,
+// Server-rendered: every visit re-queries Neon so freshly published annonces appear.
+export const dynamic = 'force-dynamic'
+
+const RTF = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' })
+
+function relativeFromNow(iso: string): string {
+  const days = Math.round((Date.now() - new Date(iso).getTime()) / 86_400_000)
+  if (days < 1)  return "aujourd'hui"
+  if (days < 30) return RTF.format(-days, 'day')
+  return RTF.format(-Math.round(days / 30), 'month')
 }
 
-export default function ListingPage() {
+export default async function ListingPage() {
+  const [annonces, total, categoryCounts] = await Promise.all([
+    listAnnonces(),
+    countActiveAnnonces(),
+    countByCategory(),
+  ])
+
   return (
     <>
       {/* ── Hero ────────────────────────────────────────────── */}
@@ -35,7 +49,7 @@ export default function ListingPage() {
 
           {/* Stats */}
           <div className="flex gap-10 justify-center mt-7">
-            {[['342', 'Annonces actives'], ['1 200+', 'Membres actifs'], ['87', 'Mises en relation/mois']].map(([n, l]) => (
+            {[[String(total), 'Annonces actives'], ['1 200+', 'Membres actifs'], ['87', 'Mises en relation/mois']].map(([n, l]) => (
               <div key={l} className="text-center">
                 <div className="text-[22px] font-extrabold text-teal">{n}</div>
                 <div className="text-[11px] text-white/50 uppercase tracking-wider">{l}</div>
@@ -73,12 +87,12 @@ export default function ListingPage() {
           </div>
 
           <p className="text-sm text-muted font-semibold mb-3.5">
-            <span className="text-teal font-bold">342</span> annonces trouvées
+            <span className="text-teal font-bold">{total}</span> annonce{total > 1 ? 's' : ''} trouvée{total > 1 ? 's' : ''}
           </p>
 
           {/* Annonce cards */}
           <div className="space-y-3.5">
-            {ANNONCES.map(a => {
+            {annonces.map(a => {
               const cat = CATEGORIES[a.category]
               return (
                 <Link
@@ -114,7 +128,7 @@ export default function ListingPage() {
                         <span className="text-[11px] font-semibold bg-surface text-navy/70 px-2.5 py-0.5 rounded-full">
                           📍 {a.location}
                         </span>
-                        <span className="text-[11px] text-muted">Il y a {a.id === 'lpt-001' ? '2 jours' : a.id === 'lpt-002' ? '3 jours' : '1 semaine'}</span>
+                        <span className="text-[11px] text-muted">{relativeFromNow(a.createdAt)}</span>
                       </div>
                     </div>
 
@@ -165,7 +179,7 @@ export default function ListingPage() {
                 <li key={key} className="flex justify-between items-center py-2 border-b border-surface last:border-0">
                   <span className="text-sm font-semibold text-navy/80">{cat.emoji} {cat.label}</span>
                   <span className="text-[11px] font-bold bg-teal-light text-teal px-2 py-0.5 rounded-full">
-                    {CATEGORY_COUNTS[key]}
+                    {categoryCounts[key]}
                   </span>
                 </li>
               ))}

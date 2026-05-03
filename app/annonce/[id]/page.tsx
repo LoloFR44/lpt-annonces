@@ -1,14 +1,19 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ANNONCES } from '@/data/mock'
 import { CATEGORIES } from '@/lib/types'
+import { getAnnonceByReference, getSimilarAnnonces } from '@/lib/queries'
 
-export default function AnnoncePage({ params }: { params: { id: string } }) {
-  const annonce = ANNONCES.find(a => a.id === params.id) ?? ANNONCES[0]
+export const dynamic = 'force-dynamic'
+
+const DATE_FMT = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+
+export default async function AnnoncePage({ params }: { params: { id: string } }) {
+  const annonce = await getAnnonceByReference(params.id)
   if (!annonce) notFound()
 
   const cat = CATEGORIES[annonce.category]
-  const similar = ANNONCES.filter(a => a.category === annonce.category && a.id !== annonce.id).slice(0, 3)
+  const similar = await getSimilarAnnonces(annonce.id, annonce.category, 3)
+  const publishedAt = DATE_FMT.format(new Date(annonce.createdAt))
 
   return (
     <>
@@ -34,7 +39,7 @@ export default function AnnoncePage({ params }: { params: { id: string } }) {
             <span className="bg-gold text-white text-[11px] font-bold px-3 py-1 rounded-full">⭐ Annonce premium</span>
           )}
           <span className="text-sm text-white/85">📍 {annonce.location}</span>
-          <span className="text-sm text-white/85">📅 Publiée le 1er avril 2026</span>
+          <span className="text-sm text-white/85">📅 Publiée le {publishedAt}</span>
           <span className="text-sm text-white/85">👁 {annonce.views} vues</span>
         </div>
       </div>
@@ -44,10 +49,13 @@ export default function AnnoncePage({ params }: { params: { id: string } }) {
         <div className="space-y-5">
 
           {/* KPIs */}
-          {annonce.kpis && (
+          {annonce.kpis && annonce.kpis.length > 0 && (
             <div className="card">
               <h2 className="section-label">Chiffres clés</h2>
-              <div className="grid grid-cols-4 gap-4">
+              <div
+                className="grid gap-4"
+                style={{ gridTemplateColumns: `repeat(${Math.min(annonce.kpis.length, 4)}, minmax(0, 1fr))` }}
+              >
                 {annonce.kpis.map(kpi => (
                   <div key={kpi.label} className="bg-surface rounded-lg p-4 text-center border border-border">
                     <div className="text-[22px] font-extrabold text-teal mb-1">{kpi.value}</div>
@@ -61,42 +69,20 @@ export default function AnnoncePage({ params }: { params: { id: string } }) {
           {/* Description */}
           <div className="card">
             <h2 className="section-label">Description de l'annonce</h2>
-            <div className="text-[14px] text-navy/75 leading-relaxed space-y-3">
-              <p>
-                Nous proposons à la cession un SaaS B2B dans le domaine des ressources humaines, fondé en 2021.
-                La plateforme permet aux PME de gérer leurs processus de recrutement, onboarding et suivi des
-                collaborateurs de manière centralisée.
-              </p>
-              <p>
-                La société est rentable depuis 18 mois avec une MRR stable de 15 000€. 45 clients PME sous
-                contrats annuels. Pas de dette technique majeure — la stack est moderne (React, Node.js, PostgreSQL, AWS).
-              </p>
-              <p className="font-semibold text-navy">Points forts de l'actif :</p>
-              <ul className="space-y-1">
-                {[
-                  'ARR de 180K€, croissance +40% sur 12 mois',
-                  'Taux de rétention de 94% (NRR positif)',
-                  'Équipe de 3 personnes (2 devs + 1 sales)',
-                  'Accompagnement du cédant pendant 6 mois inclus',
-                  'Code source complet + documentation + marque déposée',
-                  'Pipeline commercial de 12 prospects qualifiés',
-                ].map(item => (
-                  <li key={item} className="flex gap-2 items-start">
-                    <span className="text-teal font-bold mt-0.5 flex-shrink-0">✓</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="text-[14px] text-navy/75 leading-relaxed space-y-3 whitespace-pre-line">
+              {annonce.description}
             </div>
 
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mt-5">
-              {annonce.tags.map(tag => (
-                <span key={tag} className="bg-surface text-navy/70 text-xs font-semibold px-3 py-1 rounded-full">
-                  {tag}
-                </span>
-              ))}
-            </div>
+            {annonce.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-5">
+                {annonce.tags.map(tag => (
+                  <span key={tag} className="bg-surface text-navy/70 text-xs font-semibold px-3 py-1 rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Share */}
@@ -160,7 +146,7 @@ export default function AnnoncePage({ params }: { params: { id: string } }) {
                       {CATEGORIES[s.category].emoji}
                     </div>
                     <div>
-                      <h5 className="text-xs font-bold text-navy leading-snug mb-0.5">{s.title.substring(0, 45)}…</h5>
+                      <h5 className="text-xs font-bold text-navy leading-snug mb-0.5">{s.title.length > 45 ? s.title.substring(0, 45) + '…' : s.title}</h5>
                       <p className="text-[11px] text-muted">{s.location} · {s.price ?? 'À définir'}</p>
                     </div>
                   </Link>
