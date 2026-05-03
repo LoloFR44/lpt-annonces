@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { signOut, useSession } from 'next-auth/react'
 
 const NAV_LINKS = [
   { href: 'https://lespepitestech.com/startups', label: 'Startups', external: true },
@@ -11,8 +12,14 @@ const NAV_LINKS = [
   { href: 'https://lespepitestech.com/nos-offres', label: 'Nos offres', external: true },
 ]
 
+function initialsOf(name: string | null | undefined, fallback: string): string {
+  return (name?.trim().charAt(0) || fallback.charAt(0) || '?').toUpperCase()
+}
+
 export default function Header() {
   const pathname = usePathname()
+  const { data: session, status } = useSession()
+  const authed = status === 'authenticated' && session?.user
 
   return (
     <header className="bg-white border-b border-border h-[60px] flex items-center px-8 justify-between sticky top-0 z-40">
@@ -60,12 +67,35 @@ export default function Header() {
 
       {/* Auth */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <Link href="/connexion" className="text-xs font-semibold text-navy/70 px-3.5 py-1.5 border border-border rounded-full hover:border-teal hover:text-teal transition-colors">
-          Se connecter
-        </Link>
-        <Link href="/connexion?tab=register" className="text-xs font-bold text-white bg-teal px-3.5 py-1.5 rounded-full hover:bg-teal-dark transition-colors">
-          S'inscrire
-        </Link>
+        {authed ? (
+          <>
+            <Link href="/messagerie" className="text-xs font-semibold text-navy/70 px-3.5 py-1.5 border border-border rounded-full hover:border-teal hover:text-teal transition-colors">
+              ✉️ Messagerie
+            </Link>
+            <Link href="/compte" className="flex items-center gap-2 text-xs font-bold text-white bg-teal px-3.5 py-1.5 rounded-full hover:bg-teal-dark transition-colors">
+              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[11px] font-extrabold">
+                {initialsOf(session.user.name, session.user.email)}
+              </span>
+              Mon compte
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="text-xs font-semibold text-muted hover:text-navy px-2 py-1.5 transition-colors"
+              title="Se déconnecter"
+            >
+              ↩
+            </button>
+          </>
+        ) : (
+          <>
+            <Link href="/connexion" className="text-xs font-semibold text-navy/70 px-3.5 py-1.5 border border-border rounded-full hover:border-teal hover:text-teal transition-colors">
+              Se connecter
+            </Link>
+            <Link href="/connexion?tab=register" className="text-xs font-bold text-white bg-teal px-3.5 py-1.5 rounded-full hover:bg-teal-dark transition-colors">
+              S'inscrire
+            </Link>
+          </>
+        )}
       </div>
     </header>
   )
