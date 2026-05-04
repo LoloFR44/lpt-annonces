@@ -24,7 +24,23 @@ interface CreatePayload {
   location?: unknown
   price?:    unknown
   tags?:     unknown
-  plan?:     unknown
+  pack?:     unknown
+  durationMonths?: unknown
+}
+
+const VALID_PACKS: Record<string, AnnoncePlan> = {
+  free:  AnnoncePlan.FREE,
+  boost: AnnoncePlan.BOOST,
+  pro:   AnnoncePlan.PRO,
+  ultra: AnnoncePlan.ULTRA,
+}
+
+const PACK_DURATIONS: Record<string, Record<number, number>> = {
+  // months -> days, per pack. Free is always 30 days; paid packs offer 1 or 4 months.
+  free:  { 1: 30 },
+  boost: { 1: 30, 4: 120 },
+  pro:   { 1: 30, 4: 120 },
+  ultra: { 1: 30, 4: 120 },
 }
 
 function parsePriceAmount(price: string): number | null {
@@ -70,16 +86,26 @@ export async function POST(req: Request) {
   if (title.length > TITLE_MAX)        return NextResponse.json({ error: `Titre : ${TITLE_MAX} caractères max` },    { status: 400 })
   if (description.length > DESC_MAX)   return NextResponse.json({ error: `Description : ${DESC_MAX} caractères max` }, { status: 400 })
 
-  const plan: AnnoncePlan = body.plan === 'PREMIUM' ? AnnoncePlan.PREMIUM : AnnoncePlan.FREE
-  // Free = J+30, Premium = J+90 (only counts once payment lands).
-  const expiresAt = new Date()
-  expiresAt.setDate(expiresAt.getDate() + (plan === AnnoncePlan.PREMIUM ? 90 : 30))
+  const packKey = typeof body.pack === 'string' ? body.pack.toLowerCase() : 'free'
+  const plan = VALID_PACKS[packKey]
+  if (!plan) return NextResponse.json({ error: 'Pack invalide' }, { status: 400 })
 
-  // Premium annonces are kept in DRAFT until the Stripe checkout webhook
-  // marks the transaction as SUCCEEDED. Free annonces go ACTIVE immediately.
-  const status: AnnonceStatus = plan === AnnoncePlan.PREMIUM
-    ? AnnonceStatus.DRAFT
-    : AnnonceStatus.ACTIVE
+  const requestedMonths = Number(body.durationMonths)
+  const monthsTable = PACK_DURATIONS[packKey]
+  // Free defaults to 1 month; paid packs default to 4 months when nothing supplied.
+  const months = monthsTable[requestedMonths] !== undefined
+    ? requestedMonths
+    : (packKey === 'free' ? 1 : 4)
+  const durationDays = monthsTable[months]
+  if (!durationDays) return NextResponse.json({ error: 'Durée invalide pour ce pack' }, { status: 400 })
+
+  const expiresAt = new Date()
+  expiresAt.setDate(expiresAt.getDate() + durationDays)
+
+  // Paid packs sit in DRAFT until Stripe webhook flips them; Free goes live now.
+  const status: AnnonceStatus = plan === AnnoncePlan.FREE
+    ? AnnonceStatus.ACTIVE
+    : AnnonceStatus.DRAFT
 
   // De-dup tags (case-insensitive) and clip overly long values.
   const tags = Array.from(new Set(
@@ -98,12 +124,13 @@ export async function POST(req: Request) {
           priceLabel: priceLabel || null,
           priceAmount: priceLabel ? parsePriceAmount(priceLabel) : null,
           plan,
+          durationDays,
           status,
           expiresAt,
           authorId: session.user.id,
           tags: tags.length > 0 ? { create: tags.map((value) => ({ value })) } : undefined,
         },
-        select: { id: true, reference: true, status: true, plan: true },
+        select: { id: true, reference: true, status: true, plan: true, durationDays: true },
       })
       return NextResponse.json({ annonce }, { status: 201 })
     } catch (e) {

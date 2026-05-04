@@ -3,39 +3,26 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import DepositStepper from '@/components/deposit/DepositStepper'
-import { CATEGORIES } from '@/lib/types'
+import { CATEGORIES, PACKS, type Pack, type Duration } from '@/lib/types'
 import { useDeposit } from '../DepositProvider'
 
-const FREE_FEATURES = [
-  { label: 'Apparition dans les résultats', included: true },
-  { label: 'Messagerie intégrée', included: true },
-  { label: 'Profil annonceur visible', included: true },
-  { label: 'Mise en avant en tête de liste', included: false },
-  { label: 'Badge "Annonce premium"', included: false },
-  { label: 'Alerte email aux membres ciblés', included: false },
-  { label: 'Statistiques de vues', included: false },
-]
+const PAID_PACKS: Pack[] = ['boost', 'pro', 'ultra']
+const DURATION_LABELS: Record<Duration, string> = { '1m': '1 mois', '4m': '4 mois' }
+const DURATION_MONTHS: Record<Duration, number> = { '1m': 1, '4m': 4 }
 
-const PREMIUM_FEATURES = [
-  { label: 'Apparition dans les résultats', included: true },
-  { label: 'Messagerie intégrée', included: true },
-  { label: 'Profil annonceur visible', included: true },
-  { label: 'Mise en avant en tête de liste', included: true },
-  { label: 'Badge "Annonce premium"', included: true },
-  { label: 'Alerte email aux membres ciblés', included: true },
-  { label: 'Statistiques de vues détaillées', included: true },
-]
+function formatHT(amount: number | null): string {
+  if (amount === null || amount === 0) return '—'
+  return `${amount} € HT`
+}
 
 export default function DeposeStep3() {
   const router = useRouter()
   const { state, patch, reset, ready } = useDeposit()
   const [busy,  setBusy]  = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const plan = state.plan
 
   useEffect(() => {
     if (!ready) return
-    // Bounce the user back to the right step if state is incomplete.
     if (!state.category) { router.replace('/deposer'); return }
     if (!state.title || !state.description || !state.sector || !state.location) {
       router.replace('/deposer/details')
@@ -48,33 +35,32 @@ export default function DeposeStep3() {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
-        category:    state.category,
-        title:       state.title,
-        description: state.description,
-        sector:      state.sector,
-        location:    state.location,
-        price:       state.price,
-        tags:        state.tags,
-        plan:        state.plan,
+        category:       state.category,
+        title:          state.title,
+        description:    state.description,
+        sector:         state.sector,
+        location:       state.location,
+        price:          state.price,
+        tags:           state.tags,
+        pack:           state.pack,
+        durationMonths: DURATION_MONTHS[state.duration],
       }),
     })
     if (!createRes.ok) {
       const data = await createRes.json().catch(() => ({}))
-      setBusy(false)
-      setError(data.error ?? 'Erreur inattendue')
+      setBusy(false); setError(data.error ?? 'Erreur inattendue')
       return
     }
     const { annonce } = await createRes.json()
 
-    // Free path: annonce is already ACTIVE in DB, jump to confirmation.
-    if (state.plan !== 'PREMIUM') {
+    // Free → already ACTIVE in DB, jump to confirmation.
+    if (state.pack === 'free') {
       reset()
       router.push(`/deposer/confirmation?ref=${encodeURIComponent(annonce.reference)}`)
       return
     }
 
-    // Premium path: launch Stripe Checkout. The annonce stays DRAFT until the
-    // webhook flips it to ACTIVE on payment success.
+    // Paid → fire Stripe Checkout. Annonce stays DRAFT until the webhook lands.
     const checkoutRes = await fetch('/api/checkout', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -88,12 +74,15 @@ export default function DeposeStep3() {
     }
     const { url } = await checkoutRes.json()
     reset()
-    // Hard redirect to Stripe — Next router.push won't follow external URLs.
     window.location.href = url
   }
 
   if (!ready || !state.category) return null
+
   const cat = CATEGORIES[state.category]
+  const selectedPackInfo = PACKS[state.pack]
+  const totalAmount = selectedPackInfo.prices[state.duration] ?? 0
+  const totalDays   = selectedPackInfo.durationDays[state.duration]
 
   return (
     <>
@@ -104,116 +93,128 @@ export default function DeposeStep3() {
 
       <DepositStepper currentStep={3} />
 
-      <div className="max-w-[1000px] mx-auto px-6 py-8 grid grid-cols-[1fr_320px] gap-7">
+      <div className="max-w-[1100px] mx-auto px-6 py-8 grid grid-cols-[1fr_320px] gap-7">
 
+        {/* ── Main column ────────────────────────────── */}
         <div>
-          <div className="grid grid-cols-2 gap-5 mb-6">
-
-            {/* Free plan */}
-            <button
-              type="button"
-              onClick={() => patch({ plan: 'FREE' })}
-              className={`relative bg-white rounded-2xl border-2 p-7 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg
-                ${plan === 'FREE' ? 'border-teal bg-teal-light shadow-lg -translate-y-0.5' : 'border-border'}`}
-            >
-              <div className="text-4xl mb-3">📋</div>
-              <div className="text-lg font-extrabold text-navy mb-1">Gratuit</div>
-              <div className="text-[32px] font-extrabold text-green-600 leading-none my-4">
-                0 € <span className="text-sm font-medium text-muted">/ annonce</span>
-              </div>
-              <div className="text-xs text-muted mb-5">Visible 30 jours</div>
-              <ul className="space-y-0 mb-6">
-                {FREE_FEATURES.map(f => (
-                  <li key={f.label}
-                    className={`text-[13px] py-1.5 border-b border-surface last:border-0 pl-5 relative
-                      ${f.included ? 'text-navy/75' : 'text-muted/60'}`}>
-                    <span className={`absolute left-0 font-bold ${f.included ? 'text-teal' : 'text-border'}`}>
-                      {f.included ? '✓' : '✗'}
-                    </span>
-                    {f.label}
-                  </li>
-                ))}
-              </ul>
-              <div className={`w-full text-center py-3 rounded-xl text-sm font-bold transition-colors
-                ${plan === 'FREE' ? 'bg-teal text-white' : 'bg-surface text-navy/60'}`}>
-                Choisir Gratuit
-              </div>
-            </button>
-
-            {/* Premium plan */}
-            <button
-              type="button"
-              onClick={() => patch({ plan: 'PREMIUM' })}
-              className={`relative bg-white rounded-2xl border-2 p-7 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg
-                ${plan === 'PREMIUM' ? 'border-gold bg-gold-light shadow-lg -translate-y-0.5' : 'border-border'}`}
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gold text-white text-[11px] font-bold px-4 py-1 rounded-full whitespace-nowrap uppercase tracking-wider">
-                ⭐ Recommandé
-              </div>
-              <div className="text-4xl mb-3">⭐</div>
-              <div className="text-lg font-extrabold text-navy mb-1">Premium</div>
-              <div className="text-[32px] font-extrabold text-gold leading-none my-4">
-                49 € <span className="text-sm font-medium text-muted">/ annonce</span>
-              </div>
-              <div className="text-xs text-muted mb-5">Visible 90 jours · 3× plus de contacts</div>
-              <ul className="space-y-0 mb-6">
-                {PREMIUM_FEATURES.map(f => (
-                  <li key={f.label} className="text-[13px] text-navy/75 py-1.5 border-b border-surface last:border-0 pl-5 relative">
-                    <span className="absolute left-0 text-teal font-bold">✓</span>
-                    {f.label}
-                  </li>
-                ))}
-              </ul>
-              <div className={`w-full text-center py-3 rounded-xl text-sm font-bold transition-colors
-                ${plan === 'PREMIUM' ? 'bg-gold text-white' : 'bg-gold/80 text-white'}`}>
-                Choisir Premium — 49 €
-              </div>
-            </button>
+          {/* Duration toggle */}
+          <div className="bg-white rounded-xl border border-border p-5 mb-6 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted mb-3">Durée de diffusion</p>
+            <div className="inline-flex bg-surface rounded-full p-1 gap-1">
+              {(['1m', '4m'] as Duration[]).map((d) => {
+                const active = state.duration === d
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => patch({ duration: d })}
+                    className={`relative px-6 py-2 rounded-full text-sm font-bold transition-all
+                      ${active ? 'bg-teal text-white shadow' : 'text-navy/60 hover:text-navy'}`}
+                  >
+                    {DURATION_LABELS[d]}
+                    {d === '4m' && (
+                      <span className="absolute -top-2 -right-3 text-[9px] font-extrabold uppercase tracking-wider bg-gold text-white px-2 py-0.5 rounded-full whitespace-nowrap">
+                        Recommandé
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-xs text-muted mt-3 max-w-lg mx-auto leading-relaxed">
+              Le format <strong>4 mois</strong> est recommandé pour les annonces stratégiques :
+              cession, recherche d'associé, recrutement clé, partenariat ou mission d'expert.
+            </p>
           </div>
 
-          {/* Stats comparison */}
-          <div className="card">
-            <p className="section-label">Comparaison de visibilité (moyenne observée)</p>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-xs font-semibold text-navy/70 mb-1.5">
-                  <span>Annonce Gratuite</span>
-                  <span className="text-muted">~12 vues / semaine</span>
-                </div>
-                <div className="bg-surface rounded-full h-2">
-                  <div className="bg-muted/40 h-2 rounded-full" style={{ width: '30%' }} />
-                </div>
+          {/* Paid packs */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            {PAID_PACKS.map((p) => {
+              const pack = PACKS[p]
+              const price = pack.prices[state.duration]
+              const active = state.pack === p
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => patch({ pack: p })}
+                  className={`relative bg-white rounded-2xl border-2 p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg
+                    ${active ? 'shadow-lg -translate-y-0.5' : 'border-border'}`}
+                  style={active ? { borderColor: pack.color, background: pack.bg } : {}}
+                >
+                  {pack.highlight && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gold text-white text-[10px] font-bold px-3 py-1 rounded-full whitespace-nowrap uppercase tracking-wider">
+                      ⭐ Recommandé
+                    </div>
+                  )}
+                  <div className="text-3xl mb-2">{pack.emoji}</div>
+                  <div className="text-base font-extrabold text-navy mb-1" style={active ? { color: pack.color } : {}}>
+                    {pack.label}
+                  </div>
+                  <div className="text-xs text-muted mb-3 leading-snug min-h-[32px]">{pack.tagline}</div>
+                  <div className="text-[26px] font-extrabold leading-none my-3" style={{ color: pack.color }}>
+                    {formatHT(price)}
+                  </div>
+                  <div className="text-[11px] text-muted mb-4">
+                    {DURATION_LABELS[state.duration]} · visible {pack.durationDays[state.duration]} jours
+                  </div>
+                  <ul className="space-y-1 mb-4">
+                    {pack.features.map((f) => (
+                      <li key={f} className="text-[11px] text-navy/70 pl-4 relative leading-snug
+                                            before:content-['✓'] before:absolute before:left-0 before:text-teal before:font-bold">
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className={`w-full text-center py-2 rounded-lg text-xs font-bold transition-colors
+                    ${active ? 'text-white' : 'bg-surface text-navy/60'}`}
+                    style={active ? { background: pack.color } : {}}
+                  >
+                    {active ? '✓ Sélectionné' : `Choisir ${pack.label}`}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Free option (secondary) */}
+          <div className={`bg-white rounded-xl border-2 p-4 mb-6 flex items-center gap-4 cursor-pointer transition-colors
+            ${state.pack === 'free' ? 'border-teal bg-teal-light' : 'border-border hover:border-teal/50'}`}
+               onClick={() => patch({ pack: 'free' })}>
+            <input
+              type="radio"
+              checked={state.pack === 'free'}
+              onChange={() => patch({ pack: 'free' })}
+              className="w-4 h-4 accent-teal"
+              aria-label="Choisir le pack gratuit"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-lg">{PACKS.free.emoji}</span>
+                <span className="text-sm font-bold text-navy">Publier gratuitement</span>
+                <span className="text-xs font-semibold text-green-600">— 0 €</span>
               </div>
-              <div>
-                <div className="flex justify-between text-xs font-semibold mb-1.5">
-                  <span className="text-gold">Annonce Premium ⭐</span>
-                  <span className="text-gold">~38 vues / semaine</span>
-                </div>
-                <div className="bg-surface rounded-full h-2">
-                  <div className="bg-gold h-2 rounded-full" style={{ width: '90%' }} />
-                </div>
-              </div>
+              <p className="text-xs text-muted">Visible 30 jours dans les résultats standards.</p>
             </div>
           </div>
 
-          {plan === 'PREMIUM' && (
-            <div className="mt-5 px-4 py-3 rounded-lg bg-teal-light border border-teal/30 text-xs text-navy/70">
+          {error && (
+            <div role="alert" className="mt-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {state.pack !== 'free' && (
+            <div className="mt-4 px-4 py-3 rounded-lg bg-teal-light border border-teal/30 text-xs text-navy/70">
               💳 Paiement sécurisé Stripe — votre annonce reste en brouillon tant que le règlement n'est pas validé.
               {' '}En mode test, utilisez la carte <strong>4242 4242 4242 4242</strong> · n'importe quelle date future · CVC 123.
             </div>
           )}
-
-          {error && (
-            <div role="alert" className="mt-5 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-              {error}
-            </div>
-          )}
         </div>
 
-        {/* Sidebar */}
+        {/* ── Sidebar ─────────────────────────────────── */}
         <aside className="space-y-5">
 
-          {/* Recap */}
           <div className="card">
             <p className="section-label">Récapitulatif de votre annonce</p>
             <div className="space-y-0">
@@ -237,27 +238,38 @@ export default function DeposeStep3() {
             </div>
           </div>
 
-          {/* Total + CTA */}
+          {/* Total */}
           <div className="rounded-xl p-5 bg-hero-gradient text-white">
-            <p className="text-xs text-white/50 mb-1">Total à régler</p>
+            <p className="text-[11px] text-white/50 uppercase tracking-wider mb-1.5">Plan sélectionné</p>
+            <p className="text-sm font-extrabold mb-3" style={{ color: selectedPackInfo.color }}>
+              {selectedPackInfo.emoji} {selectedPackInfo.label}
+              {state.pack !== 'free' && <> · {DURATION_LABELS[state.duration]}</>}
+            </p>
+            <p className="text-[11px] text-white/50 uppercase tracking-wider mb-1">Total</p>
             <div className="text-[30px] font-extrabold text-white mb-1">
-              {plan === 'FREE' ? '0 €' : '49 €'}
+              {state.pack === 'free' ? '0 €' : `${totalAmount} € HT`}
             </div>
             <p className="text-[11px] text-white/40 mb-5">
-              {plan === 'FREE' ? 'Publication gratuite, sans CB' : 'Paiement sécurisé par Stripe (à brancher)'}
+              {state.pack === 'free'
+                ? 'Publication gratuite · sans CB'
+                : `Visible ${totalDays} jours · paiement Stripe sécurisé`}
             </p>
             <button
               onClick={handlePublish}
               disabled={busy}
               className={`w-full py-3.5 rounded-xl text-sm font-bold transition-colors mb-2.5 disabled:opacity-60
-                ${plan === 'PREMIUM' ? 'bg-gold hover:opacity-90 text-white' : 'bg-teal hover:bg-teal-dark text-white'}`}
+                ${state.pack === 'free' ? 'bg-teal hover:bg-teal-dark text-white' : 'bg-gold hover:opacity-90 text-white'}`}
             >
-              {busy ? 'Publication…' : (plan === 'PREMIUM' ? '⭐ Publier en Premium' : '🚀 Publier gratuitement')}
+              {busy
+                ? 'Publication…'
+                : state.pack === 'free'
+                  ? '🚀 Publier gratuitement'
+                  : `${selectedPackInfo.emoji} Payer ${totalAmount}€ HT et publier`}
             </button>
             <Link href="/deposer/details" className="block w-full text-center py-2.5 rounded-xl text-xs font-semibold bg-white/10 text-white/70 hover:bg-white/20 transition-colors">
               ← Retour aux détails
             </Link>
-            <p className="text-[10px] text-white/30 text-center mt-3">🔒 Paiement 100% sécurisé · Annulable à tout moment</p>
+            <p className="text-[10px] text-white/30 text-center mt-3">🔒 Paiement 100% sécurisé · Stripe</p>
           </div>
         </aside>
       </div>

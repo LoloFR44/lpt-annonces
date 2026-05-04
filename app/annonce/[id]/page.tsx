@@ -48,7 +48,7 @@ export default async function AnnoncePage({ params }: { params: { id: string } }
         </span>
         <h1 className="text-2xl font-extrabold leading-snug mb-3">{annonce.title}</h1>
         <div className="flex flex-wrap gap-4 items-center">
-          {annonce.isPremium && (
+          {annonce.isPaid && (
             <span className="bg-gold text-white text-[11px] font-bold px-3 py-1 rounded-full">⭐ Annonce premium</span>
           )}
           <span className="text-sm text-white/85">📍 {annonce.location}</span>

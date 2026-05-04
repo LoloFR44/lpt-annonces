@@ -156,7 +156,7 @@ export default async function ListingPage({ searchParams }: PageProps) {
                   href={`/annonce/${a.id}`}
                   className={`block bg-white rounded-xl border transition-all duration-200 p-5
                               hover:border-teal hover:shadow-lg hover:-translate-y-0.5
-                              ${a.isPremium ? 'border-l-4 border-l-gold border-border bg-[#FFFDF5]' : 'border-border'}`}
+                              ${a.isPaid ? 'border-l-4 border-l-gold border-border bg-[#FFFDF5]' : 'border-border'}`}
                 >
                   <div className="grid grid-cols-[auto_1fr_auto] gap-4 items-start">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: cat.bg }}>
@@ -164,7 +164,7 @@ export default async function ListingPage({ searchParams }: PageProps) {
                     </div>
 
                     <div>
-                      {a.isPremium && (
+                      {a.isPaid && (
                         <span className="inline-block bg-gold text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5">
                           ⭐ Annonce premium
                         </span>

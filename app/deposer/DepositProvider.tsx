@@ -1,8 +1,6 @@
 'use client'
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import type { Category } from '@/lib/types'
-
-export type DepositPlan = 'FREE' | 'PREMIUM'
+import type { Category, Pack, Duration } from '@/lib/types'
 
 export interface DepositState {
   category: Category | null
@@ -12,15 +10,19 @@ export interface DepositState {
   location: string
   price: string
   tags: string
-  plan: DepositPlan
+  pack: Pack
+  duration: Duration
 }
 
 const DEFAULT_STATE: DepositState = {
   category: null, title: '', description: '', sector: '',
-  location: '', price: '', tags: '', plan: 'FREE',
+  location: '', price: '', tags: '',
+  // Pro / 4 mois — recommandé par défaut.
+  pack: 'pro',
+  duration: '4m',
 }
 
-const STORAGE_KEY = 'lpt:deposit:v1'
+const STORAGE_KEY = 'lpt:deposit:v2'
 
 interface DepositContextValue {
   state: DepositState
@@ -33,7 +35,6 @@ const DepositContext = createContext<DepositContextValue | null>(null)
 
 export function DepositProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<DepositState>(DEFAULT_STATE)
-  // Hydration guard — localStorage isn't available during SSR.
   const [ready, setReady] = useState(false)
 
   useEffect(() => {

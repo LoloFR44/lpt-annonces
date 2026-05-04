@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import type { Annonce, Category } from './types'
+import type { Annonce, Category, Pack } from './types'
 import { Category as PrismaCategory, AnnonceStatus, AnnoncePlan } from '@prisma/client'
 
 /**
@@ -36,6 +36,15 @@ const annonceInclude = {
 
 type AnnonceRow = Awaited<ReturnType<typeof prisma.annonce.findFirstOrThrow<{ include: typeof annonceInclude }>>>
 
+const PRISMA_TO_PACK: Record<AnnoncePlan, Pack> = {
+  FREE:    'free',
+  BOOST:   'boost',
+  PRO:     'pro',
+  ULTRA:   'ultra',
+  // Legacy 49€ Premium → display as Pro tier (closest paid equivalent).
+  PREMIUM: 'pro',
+}
+
 function initialsOf(name: string | null | undefined): string {
   if (!name) return '?'
   return name.trim().charAt(0).toUpperCase() || '?'
@@ -52,7 +61,9 @@ function toAnnonce(row: AnnonceRow): Annonce {
     location:    row.location ?? '',
     price:       row.priceLabel ?? null,
     priceNote:   row.priceNote ?? undefined,
-    isPremium:   row.plan === AnnoncePlan.PREMIUM,
+    pack:        PRISMA_TO_PACK[row.plan],
+    durationDays: row.durationDays,
+    isPaid:      row.plan !== AnnoncePlan.FREE,
     views:       row.views,
     createdAt:   row.createdAt.toISOString(),
     expiresAt:   row.expiresAt.toISOString(),

@@ -3,12 +3,12 @@ import { getServerSession } from 'next-auth'
 import { AnnoncePlan, AnnonceStatus, TransactionStatus } from '@prisma/client'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { stripe, STRIPE_PRICE_PREMIUM_ID } from '@/lib/stripe'
+import { stripe, resolveStripePriceId } from '@/lib/stripe'
 
 export const runtime = 'nodejs'
 
 /**
- * Creates a Stripe Checkout session for a DRAFT premium annonce.
+ * Creates a Stripe Checkout session for a DRAFT paid annonce.
  * The session metadata carries the annonceId so the webhook knows
  * which row to flip to ACTIVE on success.
  *
@@ -16,7 +16,7 @@ export const runtime = 'nodejs'
  * Returns: { url: string } (Stripe-hosted checkout)
  */
 export async function POST(req: Request) {
-  if (!stripe || !STRIPE_PRICE_PREMIUM_ID) {
+  if (!stripe) {
     return NextResponse.json({ error: 'Stripe non configuré' }, { status: 503 })
   }
 
@@ -32,13 +32,21 @@ export async function POST(req: Request) {
 
   const annonce = await prisma.annonce.findUnique({
     where: { reference },
-    select: { id: true, reference: true, title: true, plan: true, status: true, authorId: true },
+    select: { id: true, reference: true, title: true, plan: true, status: true, durationDays: true, authorId: true },
   })
-  if (!annonce)                           return NextResponse.json({ error: 'Annonce introuvable' }, { status: 404 })
-  if (annonce.authorId !== session.user.id) return NextResponse.json({ error: 'Annonce non possédée' },  { status: 403 })
-  if (annonce.plan !== AnnoncePlan.PREMIUM) return NextResponse.json({ error: 'Annonce non Premium' },     { status: 400 })
+  if (!annonce)                             return NextResponse.json({ error: 'Annonce introuvable' }, { status: 404 })
+  if (annonce.authorId !== session.user.id) return NextResponse.json({ error: 'Annonce non possédée' }, { status: 403 })
+  if (annonce.plan === AnnoncePlan.FREE)    return NextResponse.json({ error: 'Pack gratuit — pas de paiement' }, { status: 400 })
   if (annonce.status === AnnonceStatus.ACTIVE) {
     return NextResponse.json({ error: 'Annonce déjà active' }, { status: 409 })
+  }
+
+  const stripePriceId = resolveStripePriceId(annonce.plan, annonce.durationDays)
+  if (!stripePriceId) {
+    return NextResponse.json(
+      { error: `Aucun prix Stripe configuré pour ${annonce.plan} ${annonce.durationDays}j` },
+      { status: 503 },
+    )
   }
 
   // Trim aggressively — env vars copy-pasted from dashboards often carry an
@@ -49,7 +57,7 @@ export async function POST(req: Request) {
     mode: 'payment',
     payment_method_types: ['card'],
     locale: 'fr',
-    line_items: [{ price: STRIPE_PRICE_PREMIUM_ID, quantity: 1 }],
+    line_items: [{ price: stripePriceId, quantity: 1 }],
     success_url: `${baseUrl}/deposer/confirmation?ref=${encodeURIComponent(annonce.reference)}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url:  `${baseUrl}/compte?cancelled_ref=${encodeURIComponent(annonce.reference)}`,
     customer_email: session.user.email ?? undefined,
@@ -57,6 +65,8 @@ export async function POST(req: Request) {
       annonceId:        annonce.id,
       annonceReference: annonce.reference,
       userId:           session.user.id,
+      pack:             annonce.plan,
+      durationDays:     String(annonce.durationDays),
     },
     payment_intent_data: {
       metadata: {
@@ -71,7 +81,8 @@ export async function POST(req: Request) {
     data: {
       userId:          session.user.id,
       annonceId:       annonce.id,
-      amount:          49,
+      // amount stays in EUR HT for our records; Stripe handles VAT on its side.
+      amount:          0,
       currency:        'EUR',
       stripeSessionId: checkoutSession.id,
       status:          TransactionStatus.PENDING,

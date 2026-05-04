@@ -26,6 +26,11 @@ enum Category {
 
 enum AnnoncePlan {
   FREE
+  BOOST
+  PRO
+  ULTRA
+  // Legacy: rows seeded as PREMIUM before the pricing repositioning.
+  // Displayed under "Premium" but no new annonces target this value.
   PREMIUM
 }
 
@@ -140,6 +145,10 @@ model Annonce {
   priceLabel  String?
   priceNote   String?
   plan        AnnoncePlan   @default(FREE)
+  // Visibility window (in days) chosen at deposit time:
+  // FREE = 30, paid 1-month = 30, paid 4-months = 120.
+  // Kept alongside expiresAt so we can re-derive after a renewal/extension.
+  durationDays Int          @default(30)
   status      AnnonceStatus @default(ACTIVE)
   views       Int           @default(0)
   expiresAt   DateTime

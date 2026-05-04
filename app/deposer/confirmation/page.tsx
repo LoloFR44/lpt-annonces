@@ -5,8 +5,16 @@ import { AnnoncePlan, AnnonceStatus, Category as PrismaCategory, TransactionStat
 import DepositStepper from '@/components/deposit/DepositStepper'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { CATEGORIES, type Category } from '@/lib/types'
+import { CATEGORIES, PACKS, type Category, type Pack } from '@/lib/types'
 import RetryCheckoutButton from '@/components/deposit/RetryCheckoutButton'
+
+const PRISMA_TO_PACK: Record<AnnoncePlan, Pack> = {
+  FREE:    'free',
+  BOOST:   'boost',
+  PRO:     'pro',
+  ULTRA:   'ultra',
+  PREMIUM: 'pro',
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -36,14 +44,15 @@ export default async function DeposeStep4({
     select: {
       id: true, reference: true, title: true, category: true,
       plan: true, status: true, expiresAt: true, views: true,
-      authorId: true,
+      durationDays: true, authorId: true,
     },
   })
   if (!annonce) notFound()
   // Only the author lands here.
   if (annonce.authorId !== session.user.id) notFound()
 
-  const lastTx = annonce.plan === AnnoncePlan.PREMIUM
+  const isPaidPack = annonce.plan !== AnnoncePlan.FREE
+  const lastTx = isPaidPack
     ? await prisma.transaction.findFirst({
         where: { annonceId: annonce.id },
         orderBy: { createdAt: 'desc' },
@@ -52,13 +61,14 @@ export default async function DeposeStep4({
     : null
 
   const cat = CATEGORIES[PRISMA_TO_MOCK_CATEGORY[annonce.category]]
+  const pack = PACKS[PRISMA_TO_PACK[annonce.plan]]
   const expiresAt = DATE_FMT.format(annonce.expiresAt)
   const isPaymentPending =
-    annonce.plan === AnnoncePlan.PREMIUM &&
+    isPaidPack &&
     annonce.status !== AnnonceStatus.ACTIVE &&
     (!lastTx || lastTx.status === TransactionStatus.PENDING)
   const paymentFailed =
-    annonce.plan === AnnoncePlan.PREMIUM &&
+    isPaidPack &&
     annonce.status !== AnnonceStatus.ACTIVE &&
     lastTx?.status === TransactionStatus.FAILED
 
@@ -150,9 +160,10 @@ export default async function DeposeStep4({
             </div>
             <div className="flex justify-between items-center py-2.5 border-b border-surface">
               <span className="text-xs text-muted font-semibold">Plan</span>
-              <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border
-                ${annonce.plan === AnnoncePlan.PREMIUM ? 'bg-gold-light text-gold border-gold/30' : 'bg-teal-light text-teal border-teal/30'}`}>
-                {annonce.plan === AnnoncePlan.PREMIUM ? '⭐ Premium' : '📋 Gratuit'}
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border"
+                    style={{ background: pack.bg, color: pack.color, borderColor: `${pack.color}55` }}>
+                {pack.emoji} {pack.label}
+                {isPaidPack && <> · {annonce.durationDays >= 90 ? '4 mois' : '1 mois'}</>}
               </span>
             </div>
             <div className="flex justify-between items-center py-2.5 border-b border-surface">

@@ -1,11 +1,19 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
-import { CATEGORIES, Category } from '@/lib/types'
+import { CATEGORIES, PACKS, Category, type Pack } from '@/lib/types'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Category as PrismaCategory, AnnonceStatus, AnnoncePlan } from '@prisma/client'
 import RetryCheckoutButton from '@/components/deposit/RetryCheckoutButton'
+
+const PRISMA_TO_PACK: Record<AnnoncePlan, Pack> = {
+  FREE:    'free',
+  BOOST:   'boost',
+  PRO:     'pro',
+  ULTRA:   'ultra',
+  PREMIUM: 'pro',
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -162,9 +170,16 @@ export default async function ComptePage() {
                         </Link>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${status.cls}`}>{status.label}</span>
-                          {a.plan === AnnoncePlan.PREMIUM && (
-                            <span className="text-[10px] font-bold bg-gold-light text-gold px-2 py-0.5 rounded-full">⭐ Premium</span>
-                          )}
+                          {a.plan !== AnnoncePlan.FREE && (() => {
+                            const pack = PACKS[PRISMA_TO_PACK[a.plan]]
+                            return (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                    style={{ background: pack.bg, color: pack.color }}>
+                                {pack.emoji} {pack.label}
+                                {a.durationDays >= 90 ? ' · 4 mois' : ' · 1 mois'}
+                              </span>
+                            )
+                          })()}
                           <span className="text-[11px] text-muted">Expire le {DATE_FMT.format(a.expiresAt)}</span>
                         </div>
                       </div>
@@ -173,7 +188,7 @@ export default async function ComptePage() {
                         <div className="text-[10px] text-muted">vues</div>
                       </div>
                       <div className="flex gap-1.5 flex-shrink-0 items-center">
-                        {a.plan === AnnoncePlan.PREMIUM && a.status === AnnonceStatus.DRAFT ? (
+                        {a.plan !== AnnoncePlan.FREE && a.status === AnnonceStatus.DRAFT ? (
                           <RetryCheckoutButton annonceReference={a.reference} variant="inline" />
                         ) : (
                           <>
