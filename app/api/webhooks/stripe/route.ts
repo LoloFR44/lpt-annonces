@@ -23,7 +23,8 @@ export async function POST(req: Request) {
   if (!stripe) {
     return NextResponse.json({ error: 'Stripe non configuré' }, { status: 503 })
   }
-  const signingSecret = process.env.STRIPE_WEBHOOK_SECRET
+  // Trim to survive copy-paste whitespace from the Vercel dashboard.
+  const signingSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim()
   if (!signingSecret) {
     return NextResponse.json({ error: 'STRIPE_WEBHOOK_SECRET absent' }, { status: 503 })
   }
