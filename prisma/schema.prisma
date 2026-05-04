@@ -13,12 +13,15 @@ datasource db {
 // ─── Enums ────────────────────────────────────────────────────────────
 
 enum Category {
-  CESSION
+  CESSION_REPRISE
+  ASSOCIES_COFONDATEURS
   RECRUTEMENT
-  PARTENARIAT
-  FREELANCE
+  PARTENARIATS_DISTRIBUTION
+  MISSIONS_EXPERTS
+  LOCAUX_RESSOURCES
+  // Legacy: kept temporarily so existing rows seeded with MATERIEL still
+  // satisfy the type. New annonces in this space should use LOCAUX_RESSOURCES.
   MATERIEL
-  LOCAUX
 }
 
 enum AnnoncePlan {

@@ -6,7 +6,10 @@ import SortSelect from '@/components/listing/SortSelect'
 export const dynamic = 'force-dynamic'
 
 const PAGE_SIZE = 12
-const VALID_CATEGORIES = new Set<Category>(['cession', 'recrutement', 'partenariat', 'freelance', 'materiel', 'locaux'])
+const VALID_CATEGORIES = new Set<Category>([
+  'cession-reprise', 'associes-cofondateurs', 'recrutement',
+  'partenariats-distribution', 'missions-experts', 'locaux-ressources',
+])
 const VALID_SORTS: ReadonlyArray<ListSort> = ['recent', 'views', 'price-asc', 'price-desc']
 
 const RTF = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' })
@@ -67,16 +70,17 @@ export default async function ListingPage({ searchParams }: PageProps) {
         <div className="absolute -bottom-20 -left-10 w-48 h-48 bg-teal/7 rounded-full" />
         <div className="max-w-3xl mx-auto text-center relative">
           <h1 className="text-[28px] font-extrabold mb-2.5">
-            Petites annonces pour <span className="text-teal">entrepreneurs</span>
+            La marketplace des <span className="text-teal">opportunités entrepreneuriales</span>
           </h1>
-          <p className="text-white/60 text-sm mb-6">
-            Cessions, recrutements, partenariats, missions… La marketplace de l'écosystème startup français
+          <p className="text-white/60 text-sm mb-6 max-w-2xl mx-auto">
+            Trouvez ou publiez des annonces qualifiées : cessions, associés, recrutements,
+            partenariats, missions d'experts et ressources pour entreprises tech.
           </p>
 
           <div className="flex gap-2 max-w-[540px] mx-auto">
             <input
               type="text"
-              placeholder="Recherche bientôt disponible…"
+              placeholder="Rechercher une opportunité, un profil, une entreprise, un secteur…"
               className="flex-1 px-5 py-3 rounded-full text-sm text-navy font-medium focus:outline-none disabled:opacity-70"
               disabled
             />
@@ -86,7 +90,7 @@ export default async function ListingPage({ searchParams }: PageProps) {
           </div>
 
           <div className="flex gap-10 justify-center mt-7">
-            {[[String(totalAll), 'Annonces actives'], ['1 200+', 'Membres actifs'], ['87', 'Mises en relation/mois']].map(([n, l]) => (
+            {[[String(totalAll), 'Opportunités actives'], ['1 200+', 'Entrepreneurs actifs'], ['87', 'Mises en relation/mois']].map(([n, l]) => (
               <div key={l} className="text-center">
                 <div className="text-[22px] font-extrabold text-teal">{n}</div>
                 <div className="text-[11px] text-white/50 uppercase tracking-wider">{l}</div>
@@ -131,8 +135,8 @@ export default async function ListingPage({ searchParams }: PageProps) {
           </div>
 
           <p className="text-sm text-muted font-semibold mb-3.5">
-            <span className="text-teal font-bold">{totalForFilter}</span> annonce{totalForFilter > 1 ? 's' : ''} trouvée{totalForFilter > 1 ? 's' : ''}
-            {category && <> dans la catégorie <strong className="text-navy">{CATEGORIES[category].label}</strong></>}
+            <span className="text-teal font-bold">{totalForFilter}</span> opportunité{totalForFilter > 1 ? 's' : ''} trouvée{totalForFilter > 1 ? 's' : ''}
+            {category && <> dans <strong className="text-navy">{CATEGORIES[category].label}</strong></>}
           </p>
 
           {/* Annonce cards */}
@@ -140,8 +144,8 @@ export default async function ListingPage({ searchParams }: PageProps) {
             {annonces.length === 0 ? (
               <div className="bg-white rounded-xl border border-border p-10 text-center">
                 <p className="text-sm text-muted">
-                  Aucune annonce {category ? `dans cette catégorie` : ''} pour l'instant —{' '}
-                  <Link href="/deposer" className="text-teal font-semibold hover:underline">déposer la première</Link> ?
+                  Aucune opportunité {category ? `dans cette catégorie` : ''} pour l'instant —{' '}
+                  <Link href="/deposer" className="text-teal font-semibold hover:underline">publier la première</Link> ?
                 </p>
               </div>
             ) : annonces.map((a) => {
@@ -231,7 +235,7 @@ export default async function ListingPage({ searchParams }: PageProps) {
         {/* ── Sidebar ── */}
         <aside className="space-y-5">
           <div className="card">
-            <p className="section-label">Déposer une annonce</p>
+            <p className="section-label">Publier une opportunité</p>
             <Link href="/deposer" className="btn-primary w-full justify-center mb-2.5 text-sm py-3">
               📝 Publier gratuitement
             </Link>

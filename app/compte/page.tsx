@@ -9,8 +9,13 @@ import { Category as PrismaCategory, AnnonceStatus, AnnoncePlan } from '@prisma/
 export const dynamic = 'force-dynamic'
 
 const PRISMA_TO_MOCK_CATEGORY: Record<PrismaCategory, Category> = {
-  CESSION: 'cession', RECRUTEMENT: 'recrutement', PARTENARIAT: 'partenariat',
-  FREELANCE: 'freelance', MATERIEL: 'materiel', LOCAUX: 'locaux',
+  CESSION_REPRISE:           'cession-reprise',
+  ASSOCIES_COFONDATEURS:     'associes-cofondateurs',
+  RECRUTEMENT:               'recrutement',
+  PARTENARIATS_DISTRIBUTION: 'partenariats-distribution',
+  MISSIONS_EXPERTS:          'missions-experts',
+  LOCAUX_RESSOURCES:         'locaux-ressources',
+  MATERIEL:                  'locaux-ressources',
 }
 const STATUS_LABEL: Record<AnnonceStatus, { label: string; cls: string }> = {
   ACTIVE:   { label: '🟢 Active',     cls: 'bg-green-50 text-green-700' },

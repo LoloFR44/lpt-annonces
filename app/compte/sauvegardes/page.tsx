@@ -9,8 +9,13 @@ import { Category as PrismaCategory, AnnoncePlan } from '@prisma/client'
 export const dynamic = 'force-dynamic'
 
 const PRISMA_TO_MOCK_CATEGORY: Record<PrismaCategory, Category> = {
-  CESSION: 'cession', RECRUTEMENT: 'recrutement', PARTENARIAT: 'partenariat',
-  FREELANCE: 'freelance', MATERIEL: 'materiel', LOCAUX: 'locaux',
+  CESSION_REPRISE:           'cession-reprise',
+  ASSOCIES_COFONDATEURS:     'associes-cofondateurs',
+  RECRUTEMENT:               'recrutement',
+  PARTENARIATS_DISTRIBUTION: 'partenariats-distribution',
+  MISSIONS_EXPERTS:          'missions-experts',
+  LOCAUX_RESSOURCES:         'locaux-ressources',
+  MATERIEL:                  'locaux-ressources',
 }
 const DATE_FMT = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 

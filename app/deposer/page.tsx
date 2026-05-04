@@ -4,15 +4,6 @@ import { CATEGORIES, Category } from '@/lib/types'
 import DepositStepper from '@/components/deposit/DepositStepper'
 import { useDeposit } from './DepositProvider'
 
-const CAT_DESCRIPTIONS: Record<Category, string> = {
-  cession:     'Vente de startup, SaaS, fonds de commerce, parts sociales ou actifs numériques',
-  recrutement: "CDI, CDD, alternance, recherche d'associé ou co-fondateur pour votre projet",
-  partenariat: 'Distribution, intégration, accord commercial, co-marketing ou alliance stratégique',
-  freelance:   'Mission ponctuelle ou longue durée : dev, design, marketing, conseil, juridique…',
-  materiel:    'Vente ou don de matériel informatique, mobilier de bureau, équipements techniques',
-  locaux:      'Sous-location, cession de bail, recherche de bureau, coworking partagé',
-}
-
 export default function DeposeStep1() {
   const router = useRouter()
   const { state, patch } = useDeposit()
@@ -21,7 +12,7 @@ export default function DeposeStep1() {
   return (
     <>
       <div className="bg-hero-gradient text-white px-8 py-9 text-center">
-        <h1 className="text-2xl font-extrabold mb-2">📝 Déposer une annonce</h1>
+        <h1 className="text-2xl font-extrabold mb-2">📝 Publier une opportunité</h1>
         <p className="text-sm text-white/60">Rejoignez 1 200+ entrepreneurs actifs sur Les Pépites Tech</p>
       </div>
 
@@ -29,10 +20,11 @@ export default function DeposeStep1() {
 
       <div className="max-w-[900px] mx-auto px-6 py-10">
         <h2 className="text-lg font-extrabold text-navy text-center mb-2">
-          Quelle est la nature de votre annonce ?
+          Quelle opportunité souhaitez-vous publier ?
         </h2>
-        <p className="text-sm text-muted text-center mb-9">
-          Choisissez la catégorie la plus adaptée pour toucher les bons profils
+        <p className="text-sm text-muted text-center mb-9 max-w-2xl mx-auto">
+          Choisissez la catégorie la plus adaptée pour toucher les bons entrepreneurs,
+          repreneurs, associés, recruteurs, experts ou partenaires.
         </p>
 
         <div className="bg-white border border-border rounded-xl p-4 flex gap-4 items-start mb-9">
@@ -67,7 +59,7 @@ export default function DeposeStep1() {
                      style={isSelected ? { color: cat.color } : {}}>
                   {cat.label}
                 </div>
-                <div className="text-[11px] text-muted leading-snug">{CAT_DESCRIPTIONS[key]}</div>
+                <div className="text-[11px] text-muted leading-snug">{cat.shortDescription}</div>
               </button>
             )
           })}

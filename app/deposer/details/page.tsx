@@ -35,7 +35,7 @@ export default function DeposeStep2() {
   return (
     <>
       <div className="bg-hero-gradient text-white px-8 py-9 text-center">
-        <h1 className="text-2xl font-extrabold mb-2">📝 Déposer une annonce</h1>
+        <h1 className="text-2xl font-extrabold mb-2">📝 Publier une opportunité</h1>
         <p className="text-sm text-white/60">Rejoignez 1 200+ entrepreneurs actifs sur Les Pépites Tech</p>
       </div>
 

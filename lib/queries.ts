@@ -9,21 +9,23 @@ import { Category as PrismaCategory, AnnonceStatus, AnnoncePlan } from '@prisma/
  */
 
 const PRISMA_TO_MOCK_CATEGORY: Record<PrismaCategory, Category> = {
-  CESSION:     'cession',
-  RECRUTEMENT: 'recrutement',
-  PARTENARIAT: 'partenariat',
-  FREELANCE:   'freelance',
-  MATERIEL:    'materiel',
-  LOCAUX:      'locaux',
+  CESSION_REPRISE:           'cession-reprise',
+  ASSOCIES_COFONDATEURS:     'associes-cofondateurs',
+  RECRUTEMENT:               'recrutement',
+  PARTENARIATS_DISTRIBUTION: 'partenariats-distribution',
+  MISSIONS_EXPERTS:          'missions-experts',
+  LOCAUX_RESSOURCES:         'locaux-ressources',
+  // Legacy: rows seeded as MATERIEL display under Locaux & ressources.
+  MATERIEL:                  'locaux-ressources',
 }
 
 const MOCK_TO_PRISMA_CATEGORY: Record<Category, PrismaCategory> = {
-  cession:     PrismaCategory.CESSION,
-  recrutement: PrismaCategory.RECRUTEMENT,
-  partenariat: PrismaCategory.PARTENARIAT,
-  freelance:   PrismaCategory.FREELANCE,
-  materiel:    PrismaCategory.MATERIEL,
-  locaux:      PrismaCategory.LOCAUX,
+  'cession-reprise':           PrismaCategory.CESSION_REPRISE,
+  'associes-cofondateurs':     PrismaCategory.ASSOCIES_COFONDATEURS,
+  'recrutement':               PrismaCategory.RECRUTEMENT,
+  'partenariats-distribution': PrismaCategory.PARTENARIATS_DISTRIBUTION,
+  'missions-experts':          PrismaCategory.MISSIONS_EXPERTS,
+  'locaux-ressources':         PrismaCategory.LOCAUX_RESSOURCES,
 }
 
 const annonceInclude = {
@@ -93,11 +95,20 @@ function orderByForSort(sort: ListSort | undefined) {
   }
 }
 
+// "locaux-ressources" inherits the legacy MATERIEL rows seeded before the
+// merge so existing matériel annonces still surface under the new label.
+function categoryToPrismaFilter(category: Category): PrismaCategory[] {
+  if (category === 'locaux-ressources') {
+    return [PrismaCategory.LOCAUX_RESSOURCES, PrismaCategory.MATERIEL]
+  }
+  return [MOCK_TO_PRISMA_CATEGORY[category]]
+}
+
 export async function listAnnonces(opts: ListAnnoncesOptions = {}): Promise<Annonce[]> {
   const rows = await prisma.annonce.findMany({
     where: {
       status: AnnonceStatus.ACTIVE,
-      ...(opts.category && { category: MOCK_TO_PRISMA_CATEGORY[opts.category] }),
+      ...(opts.category && { category: { in: categoryToPrismaFilter(opts.category) } }),
     },
     orderBy: orderByForSort(opts.sort),
     include: annonceInclude,
@@ -111,7 +122,7 @@ export async function countActiveAnnonces(category?: Category): Promise<number> 
   return prisma.annonce.count({
     where: {
       status: AnnonceStatus.ACTIVE,
-      ...(category && { category: MOCK_TO_PRISMA_CATEGORY[category] }),
+      ...(category && { category: { in: categoryToPrismaFilter(category) } }),
     },
   })
 }
@@ -122,8 +133,15 @@ export async function countByCategory(): Promise<Record<Category, number>> {
     where: { status: AnnonceStatus.ACTIVE },
     _count: { _all: true },
   })
-  const out: Record<Category, number> = { cession: 0, recrutement: 0, partenariat: 0, freelance: 0, materiel: 0, locaux: 0 }
-  for (const g of grouped) out[PRISMA_TO_MOCK_CATEGORY[g.category]] = g._count._all
+  const out: Record<Category, number> = {
+    'cession-reprise':           0,
+    'associes-cofondateurs':     0,
+    'recrutement':               0,
+    'partenariats-distribution': 0,
+    'missions-experts':          0,
+    'locaux-ressources':         0,
+  }
+  for (const g of grouped) out[PRISMA_TO_MOCK_CATEGORY[g.category]] += g._count._all
   return out
 }
 
@@ -139,7 +157,7 @@ export async function getSimilarAnnonces(reference: string, category: Category, 
   const rows = await prisma.annonce.findMany({
     where: {
       status: AnnonceStatus.ACTIVE,
-      category: MOCK_TO_PRISMA_CATEGORY[category],
+      category: { in: categoryToPrismaFilter(category) },
       NOT: { reference },
     },
     orderBy: { createdAt: 'desc' },

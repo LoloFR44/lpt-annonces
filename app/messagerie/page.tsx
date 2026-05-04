@@ -1,13 +1,24 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
-import { CATEGORIES } from '@/lib/types'
+import { CATEGORIES, Category } from '@/lib/types'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { listThreadsForUser, getThreadMessages, markThreadAsRead, countUnreadForUser } from '@/lib/messages'
 import Composer from '@/components/messages/Composer'
+import { Category as PrismaCategory } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
+
+const PRISMA_TO_CATEGORY: Record<PrismaCategory, Category> = {
+  CESSION_REPRISE:           'cession-reprise',
+  ASSOCIES_COFONDATEURS:     'associes-cofondateurs',
+  RECRUTEMENT:               'recrutement',
+  PARTENARIATS_DISTRIBUTION: 'partenariats-distribution',
+  MISSIONS_EXPERTS:          'missions-experts',
+  LOCAUX_RESSOURCES:         'locaux-ressources',
+  MATERIEL:                  'locaux-ressources',
+}
 
 const TIME_FMT = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' })
 const DAY_FMT  = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -56,7 +67,7 @@ export default async function MessageriePage({ searchParams }: PageProps) {
         await markThreadAsRead(userId, annonceRow.id, otherRow.id)
         activeAnnonce  = {
           id: annonceRow.id, reference: annonceRow.reference, title: annonceRow.title,
-          category: annonceRow.category.toLowerCase() as keyof typeof CATEGORIES,
+          category: PRISMA_TO_CATEGORY[annonceRow.category],
           authorId: annonceRow.authorId,
         }
         activeOther    = otherRow

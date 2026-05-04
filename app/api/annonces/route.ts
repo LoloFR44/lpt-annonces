@@ -5,12 +5,12 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 const VALID_CATEGORIES: Record<string, Category> = {
-  cession:     Category.CESSION,
-  recrutement: Category.RECRUTEMENT,
-  partenariat: Category.PARTENARIAT,
-  freelance:   Category.FREELANCE,
-  materiel:    Category.MATERIEL,
-  locaux:      Category.LOCAUX,
+  'cession-reprise':           Category.CESSION_REPRISE,
+  'associes-cofondateurs':     Category.ASSOCIES_COFONDATEURS,
+  'recrutement':               Category.RECRUTEMENT,
+  'partenariats-distribution': Category.PARTENARIATS_DISTRIBUTION,
+  'missions-experts':          Category.MISSIONS_EXPERTS,
+  'locaux-ressources':         Category.LOCAUX_RESSOURCES,
 }
 
 const TITLE_MAX = 100

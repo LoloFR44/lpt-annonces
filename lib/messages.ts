@@ -3,8 +3,13 @@ import { Category as PrismaCategory } from '@prisma/client'
 import type { Category } from './types'
 
 const PRISMA_TO_MOCK_CATEGORY: Record<PrismaCategory, Category> = {
-  CESSION: 'cession', RECRUTEMENT: 'recrutement', PARTENARIAT: 'partenariat',
-  FREELANCE: 'freelance', MATERIEL: 'materiel', LOCAUX: 'locaux',
+  CESSION_REPRISE:           'cession-reprise',
+  ASSOCIES_COFONDATEURS:     'associes-cofondateurs',
+  RECRUTEMENT:               'recrutement',
+  PARTENARIATS_DISTRIBUTION: 'partenariats-distribution',
+  MISSIONS_EXPERTS:          'missions-experts',
+  LOCAUX_RESSOURCES:         'locaux-ressources',
+  MATERIEL:                  'locaux-ressources',
 }
 
 export interface ThreadSummary {

@@ -9,12 +9,12 @@ import type { Category as MockCategory } from '../lib/types'
 const prisma = new PrismaClient()
 
 const CATEGORY_MAP: Record<MockCategory, Category> = {
-  cession:     Category.CESSION,
-  recrutement: Category.RECRUTEMENT,
-  partenariat: Category.PARTENARIAT,
-  freelance:   Category.FREELANCE,
-  materiel:    Category.MATERIEL,
-  locaux:      Category.LOCAUX,
+  'cession-reprise':           Category.CESSION_REPRISE,
+  'associes-cofondateurs':     Category.ASSOCIES_COFONDATEURS,
+  'recrutement':               Category.RECRUTEMENT,
+  'partenariats-distribution': Category.PARTENARIATS_DISTRIBUTION,
+  'missions-experts':          Category.MISSIONS_EXPERTS,
+  'locaux-ressources':         Category.LOCAUX_RESSOURCES,
 }
 
 // Best-effort: parse "380 000 €" / "12 000 €" into a number for sort/filter.
