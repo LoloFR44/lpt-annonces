@@ -31,6 +31,7 @@ export interface Annonce {
   tags: string[]
   kpis?: { value: string; label: string }[]
   author: {
+    id: string
     name: string
     role: string
     initials: string

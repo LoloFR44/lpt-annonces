@@ -29,7 +29,7 @@ const MOCK_TO_PRISMA_CATEGORY: Record<Category, PrismaCategory> = {
 const annonceInclude = {
   tags: true,
   kpis: { orderBy: { order: 'asc' } },
-  author: { select: { name: true, role: true, verified: true } },
+  author: { select: { id: true, name: true, role: true, verified: true } },
 } as const
 
 type AnnonceRow = Awaited<ReturnType<typeof prisma.annonce.findFirstOrThrow<{ include: typeof annonceInclude }>>>
@@ -57,6 +57,7 @@ function toAnnonce(row: AnnonceRow): Annonce {
     tags:        row.tags.map((t) => t.value),
     kpis:        row.kpis.length > 0 ? row.kpis.map((k) => ({ value: k.value, label: k.label })) : undefined,
     author: {
+      id:       row.author.id,
       name:     row.author.name ?? 'Anonyme',
       role:     row.author.role ?? '',
       initials: initialsOf(row.author.name),

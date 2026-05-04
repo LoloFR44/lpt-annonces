@@ -21,7 +21,7 @@ export const ANNONCES: Annonce[] = [
       { value: '3',     label: 'Personnes' },
       { value: '94%',   label: 'Rétention' },
     ],
-    author: { name: 'Thomas M.', role: 'Fondateur & CEO', initials: 'T', verified: true },
+    author: { id: 'mock-thomas', name: 'Thomas M.', role: 'Fondateur & CEO', initials: 'T', verified: true },
   },
   {
     id: 'lpt-002',
@@ -36,7 +36,7 @@ export const ANNONCES: Annonce[] = [
     createdAt: '2026-04-27',
     expiresAt: '2026-05-27',
     tags: ['ClimateTech', 'CTO', 'Equity', 'Remote', 'Lyon'],
-    author: { name: 'Marie L.', role: 'Fondatrice', initials: 'M', verified: true },
+    author: { id: 'mock-marie', name: 'Marie L.', role: 'Fondatrice', initials: 'M', verified: true },
   },
   {
     id: 'lpt-003',
@@ -51,7 +51,7 @@ export const ANNONCES: Annonce[] = [
     createdAt: '2026-04-25',
     expiresAt: '2026-05-25',
     tags: ['React', 'Node.js', 'Freelance', 'Remote', 'Lead Dev'],
-    author: { name: 'Julien R.', role: 'CTO', initials: 'J', verified: false },
+    author: { id: 'mock-julien', name: 'Julien R.', role: 'CTO', initials: 'J', verified: false },
   },
   {
     id: 'lpt-004',
@@ -66,7 +66,7 @@ export const ANNONCES: Annonce[] = [
     createdAt: '2026-04-23',
     expiresAt: '2026-05-23',
     tags: ['Insurtech', 'B2B', 'Distribution', 'Finance'],
-    author: { name: 'Sophie D.', role: 'Head of Sales', initials: 'S', verified: true },
+    author: { id: 'mock-sophie', name: 'Sophie D.', role: 'Head of Sales', initials: 'S', verified: true },
   },
   {
     id: 'lpt-005',
@@ -81,7 +81,7 @@ export const ANNONCES: Annonce[] = [
     createdAt: '2026-04-22',
     expiresAt: '2026-05-22',
     tags: ['Serveurs', 'Dell', 'Infrastructure', 'Bordeaux'],
-    author: { name: 'Pierre F.', role: 'CTO', initials: 'P', verified: false },
+    author: { id: 'mock-pierre', name: 'Pierre F.', role: 'CTO', initials: 'P', verified: false },
   },
   {
     id: 'lpt-006',
@@ -96,7 +96,7 @@ export const ANNONCES: Annonce[] = [
     createdAt: '2026-04-20',
     expiresAt: '2026-05-20',
     tags: ['Bureaux', 'Sous-location', 'Paris', 'Coworking'],
-    author: { name: 'Alex B.', role: 'Office Manager', initials: 'A', verified: true },
+    author: { id: 'mock-alex', name: 'Alex B.', role: 'Office Manager', initials: 'A', verified: true },
   },
   {
     id: 'lpt-007',
@@ -111,7 +111,7 @@ export const ANNONCES: Annonce[] = [
     createdAt: '2026-04-19',
     expiresAt: '2026-07-19',
     tags: ['SaaS', 'Compta', 'Freelances', 'Bordeaux'],
-    author: { name: 'Laurent P.', role: 'Fondateur', initials: 'L', verified: true },
+    author: { id: 'mock-laurent', name: 'Laurent P.', role: 'Fondateur', initials: 'L', verified: true },
   },
 ]
 

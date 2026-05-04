@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { getServerSession } from 'next-auth'
 import { CATEGORIES } from '@/lib/types'
+import { authOptions } from '@/lib/auth'
 import { getAnnonceByReference, getSimilarAnnonces } from '@/lib/queries'
 
 export const dynamic = 'force-dynamic'
@@ -11,6 +13,8 @@ export default async function AnnoncePage({ params }: { params: { id: string } }
   const annonce = await getAnnonceByReference(params.id)
   if (!annonce) notFound()
 
+  const session = await getServerSession(authOptions)
+  const isOwner = session?.user?.id === annonce.author.id
   const cat = CATEGORIES[annonce.category]
   const similar = await getSimilarAnnonces(annonce.id, annonce.category, 3)
   const publishedAt = DATE_FMT.format(new Date(annonce.createdAt))
@@ -123,15 +127,31 @@ export default async function AnnoncePage({ params }: { params: { id: string } }
               </div>
             )}
 
-            <Link href="/messagerie" className="btn-primary w-full justify-center py-3 text-sm mb-2.5">
-              ✉️ Contacter l'annonceur
-            </Link>
-            <button className="w-full border-2 border-border text-navy/70 font-bold text-sm py-2.5 rounded-lg hover:border-teal hover:text-teal transition-colors">
-              ♡ Sauvegarder l'annonce
-            </button>
-            <p className="text-[11px] text-muted text-center mt-3">
-              Votre message est confidentiel.<br />Réponse moyenne sous 24h.
-            </p>
+            {isOwner ? (
+              <>
+                <Link href="/compte" className="btn-primary w-full justify-center py-3 text-sm mb-2.5">
+                  📊 Voir mes stats
+                </Link>
+                <p className="text-[11px] text-muted text-center mt-3">
+                  C'est votre annonce — la modification arrive bientôt.
+                </p>
+              </>
+            ) : (
+              <>
+                <Link
+                  href={`/messagerie?annonce=${encodeURIComponent(annonce.id)}&with=${encodeURIComponent(annonce.author.id)}`}
+                  className="btn-primary w-full justify-center py-3 text-sm mb-2.5"
+                >
+                  ✉️ Contacter l'annonceur
+                </Link>
+                <button className="w-full border-2 border-border text-navy/70 font-bold text-sm py-2.5 rounded-lg hover:border-teal hover:text-teal transition-colors" disabled title="Bientôt disponible">
+                  ♡ Sauvegarder l'annonce
+                </button>
+                <p className="text-[11px] text-muted text-center mt-3">
+                  Votre message est confidentiel.<br />Réponse moyenne sous 24h.
+                </p>
+              </>
+            )}
           </div>
 
           {/* Annonces similaires */}
