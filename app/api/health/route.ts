@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { stripe } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -36,5 +37,28 @@ export async function GET() {
     prismaCheck = { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
 
-  return NextResponse.json({ env, prisma: prismaCheck }, { status: 200 })
+  const stripeEnv = {
+    STRIPE_SECRET_KEY_set:        Boolean(process.env.STRIPE_SECRET_KEY),
+    STRIPE_SECRET_KEY_prefix:     (process.env.STRIPE_SECRET_KEY ?? '').slice(0, 7),
+    STRIPE_PRICE_ID_set:          Boolean(process.env.STRIPE_PRICE_ID),
+    STRIPE_PRICE_ID_prefix:       (process.env.STRIPE_PRICE_ID ?? '').slice(0, 6),
+    STRIPE_WEBHOOK_SECRET_set:    Boolean(process.env.STRIPE_WEBHOOK_SECRET),
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_set: Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY),
+    NEXT_PUBLIC_SITE_URL:         process.env.NEXT_PUBLIC_SITE_URL ?? null,
+  }
+
+  let stripeCheck: { ok: boolean; error?: string; priceLive?: { id: string; amount: number | null; currency: string } } = { ok: false }
+  if (stripe && process.env.STRIPE_PRICE_ID) {
+    try {
+      const price = await stripe.prices.retrieve(process.env.STRIPE_PRICE_ID)
+      stripeCheck = {
+        ok: true,
+        priceLive: { id: price.id, amount: price.unit_amount, currency: price.currency },
+      }
+    } catch (e) {
+      stripeCheck = { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  }
+
+  return NextResponse.json({ env, prisma: prismaCheck, stripe: { env: stripeEnv, check: stripeCheck } }, { status: 200 })
 }
