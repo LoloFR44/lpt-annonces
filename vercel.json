@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/expire-annonces",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/import-linkera",
+      "schedule": "0 */6 * * *"
     }
   ]
 }

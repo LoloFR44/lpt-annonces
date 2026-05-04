@@ -1,0 +1,88 @@
+{
+  "source": "https://www.linkera.com/api/annonces",
+  "importedAt": "2026-05-04T16:16:02.457Z",
+  "totalReturned": 9,
+  "cessions": [
+    {
+      "id": "69174c51cb3a041907f62f3e",
+      "title": "Spécialiste du freinage performance - Technologie propriétaire, catalogue de +3 000 véhicules compatibles, présence dans +20 pays [Dossier n°095]",
+      "location": "FRESNES",
+      "price": "250 000",
+      "image": "https://bucketname.cellar-c2.services.clever-cloud.com/file/avatar/daf8329bdbd664dfc53764dbca484118/capture.png",
+      "description": null,
+      "type": "cession"
+    },
+    {
+      "id": "690a461213479136567d73a2",
+      "title": "Business rentable dans l'éducation digitale et image - fort potentiel",
+      "location": "PARIS 13, Suite 3H - The old Courthouse",
+      "price": "100 000",
+      "image": "https://bucketname.cellar-c2.services.clever-cloud.com/file/avatar/41dfc120d28ad78570c85071b3b8322f/capture-da-ei-cran-2026-01-15-ai-16.13.16.png",
+      "description": null,
+      "type": "cession"
+    },
+    {
+      "id": "68a84a58bf3579c049840ac0",
+      "title": "Legaltech spécialisée dans la conformité fiscale et légale pour le yachting - Dossier 092",
+      "location": "NICE",
+      "price": "500 000",
+      "image": "https://bucketname.cellar-c2.services.clever-cloud.com/file/avatar/6d36603dee51af6c6cefd5637575d2c1/capture-da-ei-cran-2025-08-22-ai-12.56.49.png",
+      "description": null,
+      "type": "cession"
+    },
+    {
+      "id": "67d1a5526954dfb318f8565f",
+      "title": "Réseau de praticiens bien-être B2B – rentabilité confirmée",
+      "location": "PARIS",
+      "price": "100 000",
+      "image": "https://bucketname.cellar-c2.services.clever-cloud.com/file/avatar/f8233ecaf9ae339939aa65f33fc24fcd/capture-da-ei-cran-2025-07-23-ai-17.33.30.png",
+      "description": null,
+      "type": "cession"
+    },
+    {
+      "id": "67892957e3bf2242ad8580b0",
+      "title": "Edtech SaaS de formation softskills et AFEST",
+      "location": "LEVALLOIS-PERRET",
+      "price": "1 300 000",
+      "image": "https://bucketname.cellar-c2.services.clever-cloud.com/file/avatar/7b50b00b5ff6254196ba804447812033/softskills-simple-effetmode-veritablenecessite.jpg",
+      "description": null,
+      "type": "cession"
+    },
+    {
+      "id": "6708d7a882304e8a7770c692",
+      "title": "Cession d'une société d'aménagement de bureaux dans le 74",
+      "location": "ANDRESY, 14 Quai de l'Oise 78750 Andrésy",
+      "price": "3 000 000",
+      "image": "https://bucketname.cellar-c2.services.clever-cloud.com/file/avatar/560985aceedfccf3b078bf5d2b5cdd50/capture-da-ei-cran-2025-06-16-ai-17.02.41.png",
+      "description": null,
+      "type": "cession"
+    },
+    {
+      "id": "670500211e87a780bb5a7782",
+      "title": "DNVB Secteur Gastronomique ",
+      "location": "Nantes, 12 Rue Copernic",
+      "price": "35 000",
+      "image": "https://bucketname.cellar-c2.services.clever-cloud.com/file/avatar/76947f0e468e65351e3d6ca42d510e0a/visuel-site-web.webp",
+      "description": null,
+      "type": "cession"
+    },
+    {
+      "id": "65f4bd69cce4b787aa5dd748",
+      "title": "Site de vente en ligne spécialisée dans la mobilité électrique (trottinette électrique)",
+      "location": "LAVAL",
+      "price": "15 000",
+      "image": "https://bucketname.cellar-c2.services.clever-cloud.com/file/avatar/f38502316292d52b0f3c86c9a95981d3/pexels-photo-2425569.webp",
+      "description": null,
+      "type": "cession"
+    },
+    {
+      "id": "65f4bd68cce4b787aa5dd738",
+      "title": "Plateforme qui synthétise automatiquement les cours des étudiants de l'enseignement supérieur",
+      "location": "AULNAY-SOUS-BOIS",
+      "price": "550 000",
+      "image": "https://bucketname.cellar-c2.services.clever-cloud.com/file/avatar/1f153c009148bf04534a3c18aeae9a4c/books-bookstore-book-reading-159711.jpeg",
+      "description": null,
+      "type": "cession"
+    }
+  ]
+}

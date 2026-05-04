@@ -64,6 +64,8 @@ function toAnnonce(row: AnnonceRow): Annonce {
     pack:        PRISMA_TO_PACK[row.plan],
     durationDays: row.durationDays,
     isPaid:      row.plan !== AnnoncePlan.FREE,
+    externalSource: row.externalSource,
+    externalId:     row.externalId,
     views:       row.views,
     createdAt:   row.createdAt.toISOString(),
     expiresAt:   row.expiresAt.toISOString(),

@@ -158,6 +158,12 @@ model Annonce {
   authorId String
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
+  // Provenance for auto-imported annonces (e.g., Linkera). Null means
+  // "posted natively on LPT". The (source, externalId) pair is unique so
+  // re-running the importer is idempotent.
+  externalSource String?
+  externalId     String?
+
   tags         AnnonceTag[]
   media        AnnonceMedia[]
   kpis         AnnonceKpi[]
@@ -165,6 +171,7 @@ model Annonce {
   transactions Transaction[]
   saved        SavedAnnonce[]
 
+  @@unique([externalSource, externalId])
   @@index([status, createdAt])
   @@index([category, status])
   @@index([authorId])

@@ -152,6 +152,8 @@ export interface Annonce {
   pack: Pack
   durationDays: number
   isPaid: boolean
+  externalSource: string | null
+  externalId: string | null
   views: number
   createdAt: string
   expiresAt: string
