@@ -1,14 +1,39 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { getServerSession } from 'next-auth'
 import DepositStepper from '@/components/deposit/DepositStepper'
+import { authOptions } from '@/lib/auth'
+import { getAnnonceByReference } from '@/lib/queries'
+import { CATEGORIES } from '@/lib/types'
 
-const ACTION_CARDS = [
-  { emoji: '👁', title: 'Voir mon annonce', desc: 'Prévisualisez votre annonce publiée', href: '/annonce/lpt-001' },
-  { emoji: '📬', title: 'Gérer mes messages', desc: 'Suivez vos demandes de contact', href: '/messagerie' },
-  { emoji: '📊', title: 'Mon tableau de bord', desc: 'Statistiques et gestion de vos annonces', href: '/compte' },
-  { emoji: '➕', title: 'Déposer une autre annonce', desc: 'Publiez une nouvelle annonce', href: '/deposer' },
-]
+export const dynamic = 'force-dynamic'
 
-export default function DeposeStep4() {
+const DATE_FMT = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+
+export default async function DeposeStep4({
+  searchParams,
+}: { searchParams: { ref?: string } }) {
+  const reference = searchParams.ref
+  if (!reference) notFound()
+
+  const annonce = await getAnnonceByReference(reference)
+  if (!annonce) notFound()
+
+  // Defensive: only let the author see the confirmation, even though the
+  // middleware already gates the route — protects against shared URLs.
+  const session = await getServerSession(authOptions)
+  if (!session?.user) notFound()
+
+  const cat = CATEGORIES[annonce.category]
+  const expiresAt = DATE_FMT.format(new Date(annonce.expiresAt))
+
+  const ACTION_CARDS = [
+    { emoji: '👁',  title: 'Voir mon annonce',          desc: 'Prévisualisez votre annonce publiée',     href: `/annonce/${annonce.id}` },
+    { emoji: '📬', title: 'Gérer mes messages',        desc: 'Suivez vos demandes de contact',         href: '/messagerie' },
+    { emoji: '📊', title: 'Mon tableau de bord',       desc: 'Statistiques et gestion de vos annonces', href: '/compte' },
+    { emoji: '➕', title: 'Déposer une autre annonce', desc: 'Publiez une nouvelle annonce',           href: '/deposer' },
+  ]
+
   return (
     <>
       <DepositStepper currentStep={4} />
@@ -24,7 +49,7 @@ export default function DeposeStep4() {
             Elle est maintenant visible par les <strong className="text-white">+12 000 entrepreneurs</strong> de l'écosystème Les Pépites Tech.
           </p>
           <p className="text-xs text-white/50 mt-4">
-            Référence annonce : <strong className="text-white font-mono tracking-wider">LPT-2026-08742</strong>
+            Référence annonce : <strong className="text-white font-mono tracking-wider">{annonce.id}</strong>
           </p>
         </div>
 
@@ -44,21 +69,34 @@ export default function DeposeStep4() {
         <div className="card mb-6">
           <p className="section-label">Détails de la publication</p>
           <div className="space-y-0">
-            {[
-              { label: 'Annonce', value: 'Cession SaaS RH — 180K ARR, rentable, équipe de 3' },
-              { label: 'Plan', valueBadge: { text: '⭐ Premium', className: 'bg-gold-light text-gold border border-gold/30' } },
-              { label: 'Statut', valueBadge: { text: '🟢 En ligne', className: 'bg-green-50 text-green-700 border border-green-200' } },
-              { label: 'Expire le', value: '29 juillet 2026' },
-              { label: 'Vues', value: '0 vue · mis à jour en temps réel' },
-            ].map(row => (
-              <div key={row.label} className="flex justify-between items-center py-2.5 border-b border-surface last:border-0">
-                <span className="text-xs text-muted font-semibold">{row.label}</span>
-                {row.valueBadge
-                  ? <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${row.valueBadge.className}`}>{row.valueBadge.text}</span>
-                  : <span className="text-xs font-bold text-navy text-right max-w-[65%]">{row.value}</span>
-                }
-              </div>
-            ))}
+            <div className="flex justify-between items-center py-2.5 border-b border-surface">
+              <span className="text-xs text-muted font-semibold">Catégorie</span>
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full" style={{ background: cat.bg, color: cat.color }}>
+                {cat.emoji} {cat.label}
+              </span>
+            </div>
+            <div className="flex justify-between items-start py-2.5 border-b border-surface">
+              <span className="text-xs text-muted font-semibold">Annonce</span>
+              <span className="text-xs font-bold text-navy text-right max-w-[65%]">{annonce.title}</span>
+            </div>
+            <div className="flex justify-between items-center py-2.5 border-b border-surface">
+              <span className="text-xs text-muted font-semibold">Plan</span>
+              <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${annonce.isPremium ? 'bg-gold-light text-gold border-gold/30' : 'bg-teal-light text-teal border-teal/30'}`}>
+                {annonce.isPremium ? '⭐ Premium' : '📋 Gratuit'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2.5 border-b border-surface">
+              <span className="text-xs text-muted font-semibold">Statut</span>
+              <span className="text-[11px] font-bold bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full border border-green-200">🟢 En ligne</span>
+            </div>
+            <div className="flex justify-between items-center py-2.5 border-b border-surface">
+              <span className="text-xs text-muted font-semibold">Expire le</span>
+              <span className="text-xs font-bold text-navy">{expiresAt}</span>
+            </div>
+            <div className="flex justify-between items-center py-2.5">
+              <span className="text-xs text-muted font-semibold">Vues</span>
+              <span className="text-xs font-bold text-navy">{annonce.views} vue{annonce.views > 1 ? 's' : ''} · mis à jour en temps réel</span>
+            </div>
           </div>
         </div>
 
