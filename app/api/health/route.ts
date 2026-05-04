@@ -43,6 +43,8 @@ export async function GET() {
     STRIPE_PRICE_ID_set:          Boolean(process.env.STRIPE_PRICE_ID),
     STRIPE_PRICE_ID_prefix:       (process.env.STRIPE_PRICE_ID ?? '').slice(0, 6),
     STRIPE_WEBHOOK_SECRET_set:    Boolean(process.env.STRIPE_WEBHOOK_SECRET),
+    STRIPE_WEBHOOK_SECRET_length: (process.env.STRIPE_WEBHOOK_SECRET ?? '').length,
+    STRIPE_WEBHOOK_SECRET_prefix: (process.env.STRIPE_WEBHOOK_SECRET ?? '').slice(0, 11),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_set: Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY),
     NEXT_PUBLIC_SITE_URL:         process.env.NEXT_PUBLIC_SITE_URL ?? null,
   }
