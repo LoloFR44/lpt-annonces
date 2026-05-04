@@ -1,0 +1,83 @@
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { AnnoncePlan, AnnonceStatus, TransactionStatus } from '@prisma/client'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { stripe, STRIPE_PRICE_PREMIUM_ID } from '@/lib/stripe'
+
+export const runtime = 'nodejs'
+
+/**
+ * Creates a Stripe Checkout session for a DRAFT premium annonce.
+ * The session metadata carries the annonceId so the webhook knows
+ * which row to flip to ACTIVE on success.
+ *
+ * Body: { annonceReference: string }
+ * Returns: { url: string } (Stripe-hosted checkout)
+ */
+export async function POST(req: Request) {
+  if (!stripe || !STRIPE_PRICE_PREMIUM_ID) {
+    return NextResponse.json({ error: 'Stripe non configuré' }, { status: 503 })
+  }
+
+  const session = await getServerSession(authOptions)
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Authentification requise' }, { status: 401 })
+  }
+
+  let body: { annonceReference?: unknown }
+  try { body = await req.json() } catch { return NextResponse.json({ error: 'Payload invalide' }, { status: 400 }) }
+  const reference = typeof body.annonceReference === 'string' ? body.annonceReference.trim() : ''
+  if (!reference) return NextResponse.json({ error: 'Annonce manquante' }, { status: 400 })
+
+  const annonce = await prisma.annonce.findUnique({
+    where: { reference },
+    select: { id: true, reference: true, title: true, plan: true, status: true, authorId: true },
+  })
+  if (!annonce)                           return NextResponse.json({ error: 'Annonce introuvable' }, { status: 404 })
+  if (annonce.authorId !== session.user.id) return NextResponse.json({ error: 'Annonce non possédée' },  { status: 403 })
+  if (annonce.plan !== AnnoncePlan.PREMIUM) return NextResponse.json({ error: 'Annonce non Premium' },     { status: 400 })
+  if (annonce.status === AnnonceStatus.ACTIVE) {
+    return NextResponse.json({ error: 'Annonce déjà active' }, { status: 409 })
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin
+
+  const checkoutSession = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    payment_method_types: ['card'],
+    locale: 'fr',
+    line_items: [{ price: STRIPE_PRICE_PREMIUM_ID, quantity: 1 }],
+    success_url: `${baseUrl}/deposer/confirmation?ref=${encodeURIComponent(annonce.reference)}&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url:  `${baseUrl}/compte?cancelled_ref=${encodeURIComponent(annonce.reference)}`,
+    customer_email: session.user.email ?? undefined,
+    metadata: {
+      annonceId:        annonce.id,
+      annonceReference: annonce.reference,
+      userId:           session.user.id,
+    },
+    payment_intent_data: {
+      metadata: {
+        annonceId:        annonce.id,
+        annonceReference: annonce.reference,
+        userId:           session.user.id,
+      },
+    },
+  })
+
+  await prisma.transaction.create({
+    data: {
+      userId:          session.user.id,
+      annonceId:       annonce.id,
+      amount:          49,
+      currency:        'EUR',
+      stripeSessionId: checkoutSession.id,
+      status:          TransactionStatus.PENDING,
+    },
+  })
+
+  if (!checkoutSession.url) {
+    return NextResponse.json({ error: 'URL de paiement indisponible' }, { status: 500 })
+  }
+  return NextResponse.json({ url: checkoutSession.url }, { status: 200 })
+}

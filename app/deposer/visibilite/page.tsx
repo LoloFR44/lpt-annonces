@@ -44,7 +44,7 @@ export default function DeposeStep3() {
 
   async function handlePublish() {
     setBusy(true); setError(null)
-    const res = await fetch('/api/annonces', {
+    const createRes = await fetch('/api/annonces', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
@@ -58,15 +58,38 @@ export default function DeposeStep3() {
         plan:        state.plan,
       }),
     })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
+    if (!createRes.ok) {
+      const data = await createRes.json().catch(() => ({}))
       setBusy(false)
       setError(data.error ?? 'Erreur inattendue')
       return
     }
-    const { annonce } = await res.json()
+    const { annonce } = await createRes.json()
+
+    // Free path: annonce is already ACTIVE in DB, jump to confirmation.
+    if (state.plan !== 'PREMIUM') {
+      reset()
+      router.push(`/deposer/confirmation?ref=${encodeURIComponent(annonce.reference)}`)
+      return
+    }
+
+    // Premium path: launch Stripe Checkout. The annonce stays DRAFT until the
+    // webhook flips it to ACTIVE on payment success.
+    const checkoutRes = await fetch('/api/checkout', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ annonceReference: annonce.reference }),
+    })
+    if (!checkoutRes.ok) {
+      const data = await checkoutRes.json().catch(() => ({}))
+      setBusy(false)
+      setError(`Annonce créée en brouillon (${annonce.reference}) mais échec de la session Stripe : ${data.error ?? 'erreur inconnue'}. Retrouvez-la sur votre tableau de bord.`)
+      return
+    }
+    const { url } = await checkoutRes.json()
     reset()
-    router.push(`/deposer/confirmation?ref=${encodeURIComponent(annonce.reference)}`)
+    // Hard redirect to Stripe — Next router.push won't follow external URLs.
+    window.location.href = url
   }
 
   if (!ready || !state.category) return null
@@ -174,8 +197,9 @@ export default function DeposeStep3() {
           </div>
 
           {plan === 'PREMIUM' && (
-            <div className="mt-5 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-              ⚠️ Stripe Checkout est en cours de branchement — pour l'instant, choisir Premium publie sans paiement en mode test.
+            <div className="mt-5 px-4 py-3 rounded-lg bg-teal-light border border-teal/30 text-xs text-navy/70">
+              💳 Paiement sécurisé Stripe — votre annonce reste en brouillon tant que le règlement n'est pas validé.
+              {' '}En mode test, utilisez la carte <strong>4242 4242 4242 4242</strong> · n'importe quelle date future · CVC 123.
             </div>
           )}
 

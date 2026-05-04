@@ -71,9 +71,15 @@ export async function POST(req: Request) {
   if (description.length > DESC_MAX)   return NextResponse.json({ error: `Description : ${DESC_MAX} caractères max` }, { status: 400 })
 
   const plan: AnnoncePlan = body.plan === 'PREMIUM' ? AnnoncePlan.PREMIUM : AnnoncePlan.FREE
-  // Free = J+30, Premium = J+90 (Stripe payment will gate Premium upgrades later).
+  // Free = J+30, Premium = J+90 (only counts once payment lands).
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + (plan === AnnoncePlan.PREMIUM ? 90 : 30))
+
+  // Premium annonces are kept in DRAFT until the Stripe checkout webhook
+  // marks the transaction as SUCCEEDED. Free annonces go ACTIVE immediately.
+  const status: AnnonceStatus = plan === AnnoncePlan.PREMIUM
+    ? AnnonceStatus.DRAFT
+    : AnnonceStatus.ACTIVE
 
   // De-dup tags (case-insensitive) and clip overly long values.
   const tags = Array.from(new Set(
@@ -92,12 +98,12 @@ export async function POST(req: Request) {
           priceLabel: priceLabel || null,
           priceAmount: priceLabel ? parsePriceAmount(priceLabel) : null,
           plan,
-          status: AnnonceStatus.ACTIVE,
+          status,
           expiresAt,
           authorId: session.user.id,
           tags: tags.length > 0 ? { create: tags.map((value) => ({ value })) } : undefined,
         },
-        select: { id: true, reference: true },
+        select: { id: true, reference: true, status: true, plan: true },
       })
       return NextResponse.json({ annonce }, { status: 201 })
     } catch (e) {

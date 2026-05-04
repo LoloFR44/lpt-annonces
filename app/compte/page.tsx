@@ -5,6 +5,7 @@ import { CATEGORIES, Category } from '@/lib/types'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Category as PrismaCategory, AnnonceStatus, AnnoncePlan } from '@prisma/client'
+import RetryCheckoutButton from '@/components/deposit/RetryCheckoutButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -171,14 +172,20 @@ export default async function ComptePage() {
                         <div className="text-base font-extrabold text-navy">{a.views}</div>
                         <div className="text-[10px] text-muted">vues</div>
                       </div>
-                      <div className="flex gap-1.5 flex-shrink-0">
-                        <button className="text-[11px] font-bold text-navy/60 bg-surface px-3 py-1.5 rounded-lg hover:bg-border transition-colors" disabled title="Bientôt disponible">
-                          Modifier
-                        </button>
-                        {a.plan === AnnoncePlan.FREE && (
-                          <button className="text-[11px] font-bold text-gold bg-gold-light border border-gold/30 px-3 py-1.5 rounded-lg hover:opacity-80 transition-opacity" disabled title="Bientôt disponible">
-                            ⭐ Booster
-                          </button>
+                      <div className="flex gap-1.5 flex-shrink-0 items-center">
+                        {a.plan === AnnoncePlan.PREMIUM && a.status === AnnonceStatus.DRAFT ? (
+                          <RetryCheckoutButton annonceReference={a.reference} variant="inline" />
+                        ) : (
+                          <>
+                            <button className="text-[11px] font-bold text-navy/60 bg-surface px-3 py-1.5 rounded-lg hover:bg-border transition-colors" disabled title="Bientôt disponible">
+                              Modifier
+                            </button>
+                            {a.plan === AnnoncePlan.FREE && (
+                              <button className="text-[11px] font-bold text-gold bg-gold-light border border-gold/30 px-3 py-1.5 rounded-lg hover:opacity-80 transition-opacity" disabled title="Bientôt disponible">
+                                ⭐ Booster
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
