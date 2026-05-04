@@ -25,7 +25,7 @@ export default async function ComptePage() {
   if (!session?.user) redirect('/connexion?callbackUrl=/compte')
   const userId = session.user.id
 
-  const [annonces, totalViews, contactsCount, unreadCount, recentMessages] = await Promise.all([
+  const [annonces, totalViews, contactsCount, unreadCount, recentMessages, savedCount] = await Promise.all([
     prisma.annonce.findMany({
       where: { authorId: userId },
       orderBy: { createdAt: 'desc' },
@@ -42,6 +42,7 @@ export default async function ComptePage() {
       take: 3,
       include: { sender: { select: { name: true, email: true, role: true } } },
     }),
+    prisma.savedAnnonce.count({ where: { userId } }),
   ])
 
   const stats = [
@@ -55,7 +56,7 @@ export default async function ComptePage() {
     { emoji: '📊', label: 'Tableau de bord', href: '/compte', active: true },
     { emoji: '📋', label: 'Mes annonces', href: '/compte', badge: String(annonces.length) },
     { emoji: '✉️', label: 'Messages', href: '/messagerie', badge: unreadCount > 0 ? String(unreadCount) : undefined, badgeColor: 'bg-teal text-white' },
-    { emoji: '♡', label: 'Annonces sauvegardées', href: '/compte' },
+    { emoji: '♡', label: 'Annonces sauvegardées', href: '/compte/sauvegardes', badge: savedCount > 0 ? String(savedCount) : undefined },
     null,
     { emoji: '👤', label: 'Mon profil', href: '/compte' },
     { emoji: '🔔', label: 'Alertes email', href: '/compte' },

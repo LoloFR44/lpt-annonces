@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth'
 import { CATEGORIES } from '@/lib/types'
 import { authOptions } from '@/lib/auth'
 import { getAnnonceByReference, getSimilarAnnonces } from '@/lib/queries'
+import { prisma } from '@/lib/prisma'
+import SaveButton from '@/components/annonces/SaveButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +20,13 @@ export default async function AnnoncePage({ params }: { params: { id: string } }
   const cat = CATEGORIES[annonce.category]
   const similar = await getSimilarAnnonces(annonce.id, annonce.category, 3)
   const publishedAt = DATE_FMT.format(new Date(annonce.createdAt))
+
+  const initialSaved = session?.user
+    ? Boolean(await prisma.savedAnnonce.findFirst({
+        where: { userId: session.user.id, annonce: { reference: annonce.id } },
+        select: { id: true },
+      }))
+    : false
 
   return (
     <>
@@ -138,15 +147,31 @@ export default async function AnnoncePage({ params }: { params: { id: string } }
               </>
             ) : (
               <>
-                <Link
-                  href={`/messagerie?annonce=${encodeURIComponent(annonce.id)}&with=${encodeURIComponent(annonce.author.id)}`}
-                  className="btn-primary w-full justify-center py-3 text-sm mb-2.5"
-                >
-                  ✉️ Contacter l'annonceur
-                </Link>
-                <button className="w-full border-2 border-border text-navy/70 font-bold text-sm py-2.5 rounded-lg hover:border-teal hover:text-teal transition-colors" disabled title="Bientôt disponible">
-                  ♡ Sauvegarder l'annonce
-                </button>
+                {session?.user ? (
+                  <Link
+                    href={`/messagerie?annonce=${encodeURIComponent(annonce.id)}&with=${encodeURIComponent(annonce.author.id)}`}
+                    className="btn-primary w-full justify-center py-3 text-sm mb-2.5"
+                  >
+                    ✉️ Contacter l'annonceur
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/connexion?callbackUrl=/annonce/${encodeURIComponent(annonce.id)}`}
+                    className="btn-primary w-full justify-center py-3 text-sm mb-2.5"
+                  >
+                    ✉️ Se connecter pour contacter
+                  </Link>
+                )}
+                {session?.user ? (
+                  <SaveButton annonceReference={annonce.id} initialSaved={initialSaved} />
+                ) : (
+                  <Link
+                    href={`/connexion?callbackUrl=/annonce/${encodeURIComponent(annonce.id)}`}
+                    className="block text-center w-full border-2 border-border text-navy/70 font-bold text-sm py-2.5 rounded-lg hover:border-teal hover:text-teal transition-colors"
+                  >
+                    ♡ Sauvegarder l'annonce
+                  </Link>
+                )}
                 <p className="text-[11px] text-muted text-center mt-3">
                   Votre message est confidentiel.<br />Réponse moyenne sous 24h.
                 </p>
