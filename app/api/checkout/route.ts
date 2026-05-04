@@ -41,7 +41,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Annonce déjà active' }, { status: 409 })
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin
+  // Trim aggressively — env vars copy-pasted from dashboards often carry an
+  // invisible trailing tab/space that breaks Stripe URL validation.
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin).trim().replace(/\/+$/, '')
 
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: 'payment',
