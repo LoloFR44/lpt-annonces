@@ -68,10 +68,29 @@ function toAnnonce(row: AnnonceRow): Annonce {
 
 // ─── Public queries ──────────────────────────────────────────────────
 
+export type ListSort = 'recent' | 'views' | 'price-asc' | 'price-desc'
+
 export interface ListAnnoncesOptions {
   category?: Category
-  take?: number
-  skip?: number
+  sort?:     ListSort
+  take?:     number
+  skip?:     number
+}
+
+// Premium first as the marketing default, then sort within tiers.
+function orderByForSort(sort: ListSort | undefined) {
+  switch (sort) {
+    case 'views':
+      return [{ plan: 'desc' as const }, { views: 'desc' as const }, { createdAt: 'desc' as const }]
+    case 'price-asc':
+      // NULLS LAST so untyped prices stay at the bottom.
+      return [{ plan: 'desc' as const }, { priceAmount: { sort: 'asc' as const, nulls: 'last' as const } }, { createdAt: 'desc' as const }]
+    case 'price-desc':
+      return [{ plan: 'desc' as const }, { priceAmount: { sort: 'desc' as const, nulls: 'last' as const } }, { createdAt: 'desc' as const }]
+    case 'recent':
+    default:
+      return [{ plan: 'desc' as const }, { createdAt: 'desc' as const }]
+  }
 }
 
 export async function listAnnonces(opts: ListAnnoncesOptions = {}): Promise<Annonce[]> {
@@ -80,11 +99,7 @@ export async function listAnnonces(opts: ListAnnoncesOptions = {}): Promise<Anno
       status: AnnonceStatus.ACTIVE,
       ...(opts.category && { category: MOCK_TO_PRISMA_CATEGORY[opts.category] }),
     },
-    orderBy: [
-      // Premium d'abord, puis date desc — reproduit l'effet "mise en avant".
-      { plan: 'desc' },
-      { createdAt: 'desc' },
-    ],
+    orderBy: orderByForSort(opts.sort),
     include: annonceInclude,
     take: opts.take,
     skip: opts.skip,
@@ -92,8 +107,13 @@ export async function listAnnonces(opts: ListAnnoncesOptions = {}): Promise<Anno
   return rows.map(toAnnonce)
 }
 
-export async function countActiveAnnonces(): Promise<number> {
-  return prisma.annonce.count({ where: { status: AnnonceStatus.ACTIVE } })
+export async function countActiveAnnonces(category?: Category): Promise<number> {
+  return prisma.annonce.count({
+    where: {
+      status: AnnonceStatus.ACTIVE,
+      ...(category && { category: MOCK_TO_PRISMA_CATEGORY[category] }),
+    },
+  })
 }
 
 export async function countByCategory(): Promise<Record<Category, number>> {
