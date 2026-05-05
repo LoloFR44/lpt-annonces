@@ -30,9 +30,9 @@ export default function AdSlot({ slot }: Props) {
             Espace publicitaire — réservez ce placement
           </h3>
           <p className="text-[13px] text-navy/60 leading-relaxed mb-2.5 line-clamp-2">
-            Touchez +12 000 entrepreneurs tech actifs en mettant votre marque
+            Touchez +50 000 acteurs de la tech en mettant votre marque
             au cœur des annonces stratégiques de l'écosystème français.
-            Cabinets M&amp;A, RH, growth, juristes, banques d'affaires… ce slot vous attend.
+            Banques, Assurances, Services, RH, Growth, … ce slot vous attend.
           </p>
           <div className="flex gap-3 flex-wrap items-center">
             <span className="text-[11px] font-semibold rounded-full px-2.5 py-0.5 bg-gold-light text-gold">
