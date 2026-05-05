@@ -28,6 +28,24 @@ export default async function AnnoncePage({ params }: { params: { id: string } }
       }))
     : false
 
+  // The annonceur's identity is hidden on the public detail page. It only
+  // surfaces once the viewer has actually started a conversation with the
+  // author about this annonce (= "mise en relation"). Owners always see
+  // their own info; admins/staff are not yet a concept here.
+  const hasContacted = session?.user && !isOwner
+    ? Boolean(await prisma.message.findFirst({
+        where: {
+          annonce: { reference: annonce.id },
+          OR: [
+            { senderId: session.user.id,    receiverId: annonce.author.id },
+            { senderId: annonce.author.id,  receiverId: session.user.id   },
+          ],
+        },
+        select: { id: true },
+      }))
+    : false
+  const revealAuthor = isOwner || hasContacted
+
   return (
     <>
       {/* Breadcrumb */}
@@ -116,14 +134,29 @@ export default async function AnnoncePage({ params }: { params: { id: string } }
           <div className="bg-white rounded-xl border-2 border-teal p-6">
             {/* Annonceur */}
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-surface">
-              <div className="w-12 h-12 rounded-full bg-teal-gradient flex items-center justify-center text-white text-lg font-extrabold flex-shrink-0">
-                {annonce.author.initials}
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-extrabold flex-shrink-0 ${revealAuthor ? 'bg-teal-gradient' : 'bg-navy/40'}`}>
+                {revealAuthor ? annonce.author.initials : '?'}
               </div>
               <div>
-                <h4 className="text-sm font-bold text-navy">{annonce.author.name}</h4>
-                <p className="text-xs text-muted">{annonce.author.role}</p>
-                {annonce.author.verified && (
-                  <span className="text-[11px] text-green-600 font-semibold">✓ Profil vérifié LPT</span>
+                <h4 className="text-sm font-bold text-navy">
+                  {revealAuthor ? annonce.author.name : 'Annonceur Les Pépites Tech'}
+                </h4>
+                {revealAuthor ? (
+                  <>
+                    <p className="text-xs text-muted">{annonce.author.role}</p>
+                    {annonce.author.verified && (
+                      <span className="text-[11px] text-green-600 font-semibold">✓ Profil vérifié LPT</span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {annonce.author.verified && (
+                      <span className="text-[11px] text-green-600 font-semibold">✓ Profil vérifié LPT</span>
+                    )}
+                    <p className="text-[11px] text-muted leading-snug mt-0.5">
+                      L'identité s'affichera dès que vous aurez initié la mise en relation.
+                    </p>
+                  </>
                 )}
               </div>
             </div>
