@@ -17,12 +17,14 @@ export interface DepositState {
 const DEFAULT_STATE: DepositState = {
   category: null, title: '', description: '', sector: '',
   location: '', price: '', tags: '',
-  // Pro / 4 mois — recommandé par défaut.
-  pack: 'pro',
-  duration: '4m',
+  // Test phase: only Boost 1m is wired through to a live Stripe price,
+  // so it's the safest default until all paid prices are activated.
+  pack: 'boost',
+  duration: '1m',
 }
 
-const STORAGE_KEY = 'lpt:deposit:v2'
+// v3 = pack default flipped to boost/1m for the test rollout
+const STORAGE_KEY = 'lpt:deposit:v3'
 
 interface DepositContextValue {
   state: DepositState

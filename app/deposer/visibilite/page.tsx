@@ -10,6 +10,14 @@ const PAID_PACKS: Pack[] = ['boost', 'pro', 'ultra']
 const DURATION_LABELS: Record<Duration, string> = { '1m': '1 mois', '4m': '4 mois' }
 const DURATION_MONTHS: Record<Duration, number> = { '1m': 1, '4m': 4 }
 
+// Test rollout — only this (pack, duration) pair is hooked to a live
+// Stripe price for now. Other paid combos stay visible but disabled,
+// so the rendering can be validated without exposing broken checkouts.
+function isCheckoutEnabled(pack: Pack, duration: Duration): boolean {
+  if (pack === 'free') return true
+  return pack === 'boost' && duration === '1m'
+}
+
 function formatHT(amount: number | null): string {
   if (amount === null || amount === 0) return '—'
   return `${amount} € HT`
@@ -83,6 +91,7 @@ export default function DeposeStep3() {
   const selectedPackInfo = PACKS[state.pack]
   const totalAmount = selectedPackInfo.prices[state.duration] ?? 0
   const totalDays   = selectedPackInfo.durationDays[state.duration]
+  const canPublish  = isCheckoutEnabled(state.pack, state.duration)
 
   return (
     <>
@@ -133,18 +142,25 @@ export default function DeposeStep3() {
               const pack = PACKS[p]
               const price = pack.prices[state.duration]
               const active = state.pack === p
+              const enabled = isCheckoutEnabled(p, state.duration)
               return (
                 <button
                   key={p}
                   type="button"
                   onClick={() => patch({ pack: p })}
                   className={`relative bg-white rounded-2xl border-2 p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg
-                    ${active ? 'shadow-lg -translate-y-0.5' : 'border-border'}`}
+                    ${active ? 'shadow-lg -translate-y-0.5' : 'border-border'}
+                    ${!enabled ? 'opacity-70' : ''}`}
                   style={active ? { borderColor: pack.color, background: pack.bg } : {}}
                 >
                   {pack.highlight && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gold text-white text-[10px] font-bold px-3 py-1 rounded-full whitespace-nowrap uppercase tracking-wider">
                       ⭐ Recommandé
+                    </div>
+                  )}
+                  {!enabled && (
+                    <div className="absolute top-3 right-3 bg-navy/80 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                      🔒 Bientôt
                     </div>
                   )}
                   <div className="text-3xl mb-2">{pack.emoji}</div>
@@ -256,16 +272,24 @@ export default function DeposeStep3() {
             </p>
             <button
               onClick={handlePublish}
-              disabled={busy}
-              className={`w-full py-3.5 rounded-xl text-sm font-bold transition-colors mb-2.5 disabled:opacity-60
+              disabled={busy || !canPublish}
+              className={`w-full py-3.5 rounded-xl text-sm font-bold transition-colors mb-2.5 disabled:opacity-60 disabled:cursor-not-allowed
                 ${state.pack === 'free' ? 'bg-teal hover:bg-teal-dark text-white' : 'bg-gold hover:opacity-90 text-white'}`}
             >
               {busy
                 ? 'Publication…'
-                : state.pack === 'free'
-                  ? '🚀 Publier gratuitement'
-                  : `${selectedPackInfo.emoji} Payer ${totalAmount}€ HT et publier`}
+                : !canPublish
+                  ? '🔒 Pack en cours d\'activation'
+                  : state.pack === 'free'
+                    ? '🚀 Publier gratuitement'
+                    : `${selectedPackInfo.emoji} Payer ${totalAmount}€ HT et publier`}
             </button>
+            {!canPublish && state.pack !== 'free' && (
+              <p className="text-[10px] text-white/60 text-center mt-1 mb-2 leading-snug">
+                En phase de test, seul <strong className="text-teal">Boost · 1 mois (49 € HT)</strong> est payable.
+                Les autres packs sont visibles pour validation visuelle uniquement.
+              </p>
+            )}
             <Link href="/deposer/details" className="block w-full text-center py-2.5 rounded-xl text-xs font-semibold bg-white/10 text-white/70 hover:bg-white/20 transition-colors">
               ← Retour aux détails
             </Link>

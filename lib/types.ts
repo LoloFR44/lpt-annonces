@@ -95,7 +95,7 @@ export const PACKS: Record<Pack, {
     color:    '#2BBFBF',
     bg:       '#E8F8F8',
     tagline:  'Pour gagner en visibilité sans se ruiner',
-    prices:        { '1m': 39,   '4m': 99  },
+    prices:        { '1m': 49,   '4m': 99  },
     durationDays:  { '1m': 30,   '4m': 120 },
     features: [
       'Apparition prioritaire dans les résultats',
