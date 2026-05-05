@@ -21,19 +21,10 @@ const NEW_ROLE  = 'Analyste cessions & reprises — Linkera'
 const PASSWORD  = process.env.LINKERA_ANALYST_PASSWORD ?? 'linkera-analyste-2026'
 
 function buildDescription(item: { id: string; title: string; location: string | null; price: string | null }): string {
-  const parts: string[] = []
-  parts.push(item.title)
-  parts.push('')
-  parts.push('**À propos de cette opportunité**')
+  const parts: string[] = [item.title, '', '**À propos de cette opportunité**']
   if (item.location) parts.push(`📍 Localisation : ${item.location}`)
   if (item.price)    parts.push(`💰 Prix de cession : ${item.price}`)
   parts.push('🏷️ Type : Cession & reprise')
-  parts.push('')
-  parts.push("Le dossier détaillé (chiffres clés, raison de la cession, conditions, contact direct du cédant) est disponible sur Linkera, partenaire des opérations de cession et reprise d'entreprise.")
-  parts.push('')
-  parts.push(`👉 Consulter le dossier complet : https://www.linkera.com/annonces/${item.id}`)
-  parts.push('')
-  parts.push("💬 Vous pouvez aussi contacter directement notre analyste via le bouton « Contacter l'annonceur » — nous répondons sous 24h ouvrées et pouvons vous orienter vers le bon interlocuteur côté Linkera.")
   return parts.join('\n')
 }
 

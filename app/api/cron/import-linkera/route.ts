@@ -47,20 +47,11 @@ function parsePrice(priceStr: string): number | null {
 function buildDescription(item: LinkeraDetail): string {
   // If Linkera's API ever returns a real description, use it as-is.
   if (item.description && item.description.trim().length > 0) return item.description
-  // Otherwise compose the richest possible recap from the public fields.
-  const parts: string[] = []
-  parts.push(item.title)
-  parts.push('')
-  parts.push('**À propos de cette opportunité**')
+  // Otherwise compose a short recap from the public fields.
+  const parts: string[] = [item.title, '', '**À propos de cette opportunité**']
   parts.push(`📍 Localisation : ${item.location}`)
   if (item.price) parts.push(`💰 Prix de cession : ${item.price} €`)
   parts.push('🏷️ Type : Cession & reprise')
-  parts.push('')
-  parts.push('Le dossier détaillé (chiffres clés, raison de la cession, conditions, contact direct du cédant) est disponible sur Linkera, partenaire des opérations de cession et reprise d\'entreprise.')
-  parts.push('')
-  parts.push(`👉 Consulter le dossier complet : https://www.linkera.com/annonces/${item.id}`)
-  parts.push('')
-  parts.push('💬 Vous pouvez aussi contacter directement notre analyste via le bouton « Contacter l\'annonceur » — nous répondons sous 24h ouvrées et pouvons vous orienter vers le bon interlocuteur côté Linkera.')
   return parts.join('\n')
 }
 
