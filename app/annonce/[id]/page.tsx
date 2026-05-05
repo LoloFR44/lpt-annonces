@@ -51,16 +51,6 @@ export default async function AnnoncePage({ params }: { params: { id: string } }
           {annonce.isPaid && (
             <span className="bg-gold text-white text-[11px] font-bold px-3 py-1 rounded-full">⭐ Annonce premium</span>
           )}
-          {annonce.externalSource === 'linkera' && annonce.externalId && (
-            <a
-              href={`https://www.linkera.com/annonces/${annonce.externalId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white/15 text-white text-[11px] font-semibold px-3 py-1 rounded-full hover:bg-white/25 transition-colors"
-            >
-              🔗 Source : Linkera ↗
-            </a>
-          )}
           <span className="text-sm text-white/85">📍 {annonce.location}</span>
           <span className="text-sm text-white/85">📅 Publiée le {publishedAt}</span>
           <span className="text-sm text-white/85">👁 {annonce.views} vues</span>

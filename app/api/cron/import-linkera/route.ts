@@ -19,8 +19,11 @@ export const dynamic = 'force-dynamic'
 const SOURCE = 'linkera'
 // Author of every imported annonce. The team behind this account reads the
 // messagerie threads — clicking "Contacter l'annonceur" routes here.
+// Display name is intentionally neutral: the Linkera origin must not leak
+// publicly until the prospect has initiated contact.
 const SYSTEM_USER_EMAIL    = 'analyste@linkera.com'
-const SYSTEM_USER_NAME     = 'Analyste Linkera'
+const SYSTEM_USER_NAME     = 'Analyste Cession & reprise'
+const SYSTEM_USER_ROLE     = 'Pôle Cessions — Les Pépites Tech'
 // Default password used when creating the system user. Override via env in
 // production. The user can rotate it via the normal login flow once set.
 const SYSTEM_USER_DEFAULT_PASSWORD = process.env.LINKERA_ANALYST_PASSWORD ?? 'linkera-analyste-2026'
@@ -79,7 +82,7 @@ async function getOrCreateSystemUser(): Promise<string> {
     data: {
       email:        SYSTEM_USER_EMAIL,
       name:         SYSTEM_USER_NAME,
-      role:         'Analyste cessions & reprises — Linkera',
+      role:         SYSTEM_USER_ROLE,
       verified:     true,
       passwordHash: hash,
     },
@@ -153,7 +156,7 @@ export async function GET(req: Request) {
           authorId:     systemUserId,
           externalSource: SOURCE,
           externalId:     item.id,
-          tags: { create: [{ value: 'Linkera' }, { value: 'Cession' }] },
+          tags: { create: [{ value: 'Cession' }] },
         },
       })
       stats.imported++

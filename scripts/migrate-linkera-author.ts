@@ -16,8 +16,10 @@ import { prisma } from '../lib/prisma'
 
 const OLD_EMAIL = 'linkera-sync@lpt-system.local'
 const NEW_EMAIL = 'analyste@linkera.com'
-const NEW_NAME  = 'Analyste Linkera'
-const NEW_ROLE  = 'Analyste cessions & reprises — Linkera'
+// Public display name + role must stay neutral so the Linkera origin
+// is not leaked before the prospect initiates contact.
+const NEW_NAME  = 'Analyste Cession & reprise'
+const NEW_ROLE  = 'Pôle Cessions — Les Pépites Tech'
 const PASSWORD  = process.env.LINKERA_ANALYST_PASSWORD ?? 'linkera-analyste-2026'
 
 function buildDescription(item: { id: string; title: string; location: string | null; price: string | null }): string {
@@ -105,6 +107,15 @@ async function main() {
     updated++
   }
   console.log(`   ${updated} descriptions rewritten`)
+
+  console.log('3) Removing any "Linkera" tag from imported annonces…')
+  const removed = await prisma.annonceTag.deleteMany({
+    where: {
+      value: 'Linkera',
+      annonce: { externalSource: 'linkera' },
+    },
+  })
+  console.log(`   ${removed.count} tags dropped`)
 
   console.log('Done.')
   console.log('')
