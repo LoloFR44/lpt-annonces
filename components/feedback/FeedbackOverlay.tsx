@@ -14,6 +14,10 @@ const PAGE_NAMES: Record<string, string> = {
   '/messagerie':          'Messagerie',
 }
 
+// Pages where the feedback widget is intentionally hidden — typically
+// chat / private surfaces where the floating button gets in the way.
+const HIDDEN_PATHS: ReadonlyArray<string> = ['/messagerie']
+
 export default function FeedbackOverlay() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
@@ -21,6 +25,10 @@ export default function FeedbackOverlay() {
   const [feedback, setFeedback] = useState('')
   const [element, setElement] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  if (HIDDEN_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return null
+  }
 
   // Resolve page name
   const pageName = Object.entries(PAGE_NAMES)

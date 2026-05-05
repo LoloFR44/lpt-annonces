@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { CATEGORIES, Category } from '@/lib/types'
 import { listAnnonces, countActiveAnnonces, countByCategory, type ListSort } from '@/lib/queries'
 import SortSelect from '@/components/listing/SortSelect'
+import AdSlot from '@/components/ads/AdSlot'
 
 export const dynamic = 'force-dynamic'
 
@@ -198,6 +199,15 @@ export default async function ListingPage({ searchParams }: PageProps) {
               )
             })}
           </div>
+
+          {/* Sponsored slot — same footprint as a card. One per page below
+              the annonces, before the pagination. To be replaced by an
+              ad-server snippet later (slot id used as targeting key). */}
+          {annonces.length > 0 && (
+            <div className="mt-3.5">
+              <AdSlot slot={`lpt-listing-bottom-${category ?? 'all'}-p${page}`} />
+            </div>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (
