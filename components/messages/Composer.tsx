@@ -5,13 +5,18 @@ import { useRouter } from 'next/navigation'
 interface Props {
   annonceReference: string
   recipientId:      string
+  /** Pre-filled message for first contact. Empty/undefined = blank textarea. */
+  defaultBody?:     string
 }
 
-export default function Composer({ annonceReference, recipientId }: Props) {
+export default function Composer({ annonceReference, recipientId, defaultBody }: Props) {
   const router = useRouter()
   const [busy,  setBusy]  = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [body,  setBody]  = useState('')
+  const [body,  setBody]  = useState(defaultBody ?? '')
+  // While the textarea still holds the suggested template untouched, render
+  // it muted so the user understands it's a draft they can edit or replace.
+  const stillTemplate = defaultBody !== undefined && body === defaultBody
 
   async function handleSend(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -40,7 +45,8 @@ export default function Composer({ annonceReference, recipientId }: Props) {
       )}
       <div className="flex gap-3 items-end">
         <textarea
-          className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 text-sm text-navy placeholder:text-muted focus:outline-none focus:border-teal transition-colors resize-none"
+          className={`flex-1 bg-surface border border-border rounded-xl px-4 py-3 text-sm placeholder:text-muted focus:outline-none focus:border-teal transition-colors resize-none
+            ${stillTemplate ? 'text-muted italic' : 'text-navy'}`}
           placeholder="Écrivez votre message…"
           rows={2}
           value={body}

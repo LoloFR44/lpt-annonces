@@ -81,6 +81,16 @@ export default async function MessageriePage({ searchParams }: PageProps) {
     countUnreadForUser(userId),
   ])
 
+  // Initiales seulement (pas de nom complet) — privacy par défaut.
+  function initialsOf(name: string | null | undefined, fallback: string): string {
+    const source = (name?.trim() || fallback).normalize('NFKD').replace(/[^a-zA-Z\s]/g, '')
+    const ini = source.split(/\s+/).filter(Boolean).slice(0, 3).map((w) => w[0].toUpperCase()).join('')
+    return ini || '?'
+  }
+  const activeOtherInitials = activeOther ? initialsOf(activeOther.name, activeOther.email) : ''
+  const isNewThread = activeMessages !== null && activeMessages.length === 0
+  const FIRST_MESSAGE_TEMPLATE = 'Je souhaite avoir plus d\'informations concernant votre annonce, êtes-vous disponible pour échanger ?'
+
   return (
     <>
       {/* Page header */}
@@ -134,7 +144,7 @@ export default async function MessageriePage({ searchParams }: PageProps) {
                     <p className="text-[11px] font-bold mb-0.5 truncate" style={{ color: cat.color }}>
                       {cat.emoji} {t.annonceTitle.length > 28 ? t.annonceTitle.slice(0, 28) + '…' : t.annonceTitle}
                     </p>
-                    <h5 className="text-sm font-bold text-navy mb-0.5">{t.otherUserName}</h5>
+                    <h5 className="text-sm font-bold text-navy mb-0.5">{t.otherUserInitial}</h5>
                     <p className="text-xs text-muted truncate">
                       {t.lastSenderIsMe ? <span className="text-navy/50">Vous : </span> : null}
                       {t.lastMessage}
@@ -170,13 +180,13 @@ export default async function MessageriePage({ searchParams }: PageProps) {
             </div>
           ) : (
             <>
-              {/* Chat header */}
+              {/* Chat header — initiales seulement, pas de nom complet */}
               <div className="bg-white border-b border-border px-6 py-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-extrabold flex-shrink-0 bg-teal-gradient">
-                  {(activeOther.name?.trim().charAt(0) || activeOther.email.charAt(0)).toUpperCase()}
+                  {activeOtherInitials}
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-bold text-navy">{activeOther.name ?? activeOther.email}</h4>
+                  <h4 className="text-sm font-bold text-navy">{activeOtherInitials}</h4>
                   <p className="text-xs text-muted">{CATEGORIES[activeAnnonce.category].emoji} {activeAnnonce.title}</p>
                 </div>
                 <div className="flex gap-2">
@@ -215,7 +225,11 @@ export default async function MessageriePage({ searchParams }: PageProps) {
                 <p className="text-[11px] text-muted">🔒 Messages confidentiels · Ne partagez jamais vos coordonnées bancaires</p>
               </div>
 
-              <Composer annonceReference={activeAnnonce.reference} recipientId={activeOther.id} />
+              <Composer
+                annonceReference={activeAnnonce.reference}
+                recipientId={activeOther.id}
+                defaultBody={isNewThread ? FIRST_MESSAGE_TEMPLATE : undefined}
+              />
             </>
           )}
         </div>

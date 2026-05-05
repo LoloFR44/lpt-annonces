@@ -35,8 +35,17 @@ export interface ThreadMessage {
   readAt:    string | null
 }
 
-function initialOf(name: string | null | undefined, fallback: string): string {
-  return (name?.trim().charAt(0) || fallback.charAt(0) || '?').toUpperCase()
+/**
+ * Returns the initials of every alphabetic word in a name (max 3 letters).
+ * "Thomas M." → "TM"
+ * "Marie Curie" → "MC"
+ * "Analyste Cession & reprise" → "ACR"
+ * Falls back to the first character of the email when the name is empty.
+ */
+function initialsOf(name: string | null | undefined, fallback: string): string {
+  const source = (name?.trim() || fallback).normalize('NFKD').replace(/[^a-zA-Z\s]/g, '')
+  const ini = source.split(/\s+/).filter(Boolean).slice(0, 3).map((w) => w[0].toUpperCase()).join('')
+  return ini || '?'
 }
 
 /**
@@ -69,7 +78,7 @@ export async function listThreadsForUser(userId: string): Promise<ThreadSummary[
         otherUserId:      otherUser.id,
         otherUserName:    otherUser.name ?? otherUser.email,
         otherUserRole:    otherUser.role ?? '',
-        otherUserInitial: initialOf(otherUser.name, otherUser.email),
+        otherUserInitial: initialsOf(otherUser.name, otherUser.email),
         lastMessage:      m.body,
         lastMessageAt:    m.createdAt.toISOString(),
         lastSenderIsMe:   fromMe,
